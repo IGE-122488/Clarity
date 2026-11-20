@@ -20,13 +20,20 @@ ClientDep = Annotated[httpx.AsyncClient, Depends(get_http_client)]
 
 
 def bearer_token(authorization: Annotated[str | None, Header()] = None) -> str:
-    if not authorization or not authorization.lower().startswith("bearer "):
+    token = ""
+    if authorization and authorization.lower().startswith("bearer "):
+        token = authorization.split(" ", 1)[1].strip()
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="É necessário iniciar sessão.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return authorization.split(" ", 1)[1].strip()
+    return token
+
+
+# Token do psicólogo, passado tal e qual ao Supabase (que o valida e aplica as regras RLS).
+Token = Annotated[str, Depends(bearer_token)]
 
 
 async def current_user(
