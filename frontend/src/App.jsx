@@ -5,6 +5,7 @@ import { Estado } from './pages/Estado'
 import { Entrar } from './pages/Entrar'
 import { NaoEncontrado } from './pages/NaoEncontrado'
 
+
 const router = createBrowserRouter([
   {
     element: <Layout />,
