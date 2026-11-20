@@ -14,6 +14,7 @@ export function Layout() {
         </NavLink>
         <nav aria-label="Navegação principal">
           <NavLink to="/" end>Início</NavLink>
+          {session && <NavLink to="/pacientes">Pacientes</NavLink>}
           <NavLink to="/estado">Estado</NavLink>
         </nav>
         <div className="topbar-right">
