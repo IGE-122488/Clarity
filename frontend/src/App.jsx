@@ -4,6 +4,8 @@ import { Inicio } from './pages/Inicio'
 import { Estado } from './pages/Estado'
 import { Entrar } from './pages/Entrar'
 import { Pacientes } from './pages/Pacientes'
+import { Paciente } from './pages/Paciente'
+import { Agenda } from './pages/Agenda'
 import { NaoEncontrado } from './pages/NaoEncontrado'
 
 const router = createBrowserRouter([
@@ -11,7 +13,9 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { path: '/', element: <Inicio /> },
+      { path: '/agenda', element: <Agenda /> },
       { path: '/pacientes', element: <Pacientes /> },
+      { path: '/pacientes/:id', element: <Paciente /> },
       { path: '/estado', element: <Estado /> },
       { path: '/entrar', element: <Entrar /> },
       { path: '*', element: <NaoEncontrado /> },

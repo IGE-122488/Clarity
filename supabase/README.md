@@ -15,10 +15,11 @@ Cada migração corre **uma só vez** por projeto. Correr outra vez dá erro (`a
 | Migração | O que faz |
 | --- | --- |
 | `20261120180000_pacientes.sql` | Tabela `pacientes`, permissões e regras RLS (cada psicólogo só vê os seus) |
+| `20261123120000_consultas.sql` | Agenda: tabela `consultas` com as notas de cada consulta; só para pacientes do próprio psicólogo |
 
 ## Testar as regras RLS
 
-SQL Editor → New query → colar `tests/pacientes_rls.sql` → **Run**.
+SQL Editor → New query → colar o teste (`tests/pacientes_rls.sql`, `tests/consultas_rls.sql`) → **Run**.
 
 - Tem de aparecer `OK — todos os testes RLS passaram (nada ficou gravado)`.
 - Se aparecer um erro que começa por `FALHOU:`, a regra correspondente está errada. Não avançar.

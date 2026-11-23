@@ -1,8 +1,9 @@
 """Supabase falso para testes: responde sem rede.
 
-`SupabaseFalso` imita também a Data API (PostgREST) da tabela pacientes, incluindo o efeito das
-regras RLS: cada token só vê os pacientes do seu psicólogo. As regras RLS verdadeiras são
-testadas na base de dados com supabase/tests/pacientes_rls.sql.
+`SupabaseFalso` imita também a Data API (PostgREST) das tabelas pacientes e consultas, incluindo
+o efeito das regras RLS (cada token só vê as linhas do seu psicólogo), das permissões por coluna
+e da chave estrangeira que obriga a consulta a ser de um paciente do mesmo psicólogo.
+As regras verdadeiras são testadas na base de dados com supabase/tests/*.sql.
 """
 
 import json
@@ -19,8 +20,20 @@ PSICOLOGOS = {
     TOKEN_OUTRA: "uuid-outra-psicologa",
 }
 
-COLUNAS_INSERT = {"nome", "data_nascimento"}
-COLUNAS_UPDATE = {"nome", "data_nascimento", "ativo"}
+TABELAS = {
+    "pacientes": {
+        "insert": {"nome", "data_nascimento"},
+        "update": {"nome", "data_nascimento", "ativo"},
+        "omissao": {"data_nascimento": None, "ativo": True},
+    },
+    "consultas": {
+        "insert": {"paciente_id", "inicio", "fim", "estado", "notas"},
+        "update": {"inicio", "fim", "estado", "notas"},
+        "omissao": {"estado": "agendada", "notas": None},
+    },
+}
+
+PARAMETROS_ESPECIAIS = {"select", "order", "limit"}
 
 
 def supabase_falso(request: httpx.Request) -> httpx.Response:
@@ -39,16 +52,45 @@ def supabase_em_baixo(request: httpx.Request) -> httpx.Response:
     raise httpx.ConnectError("sem rede", request=request)
 
 
+def _agora() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _cumpre(linha: dict, coluna: str, condicao: str) -> bool:
+    operador, valor = condicao.split(".", 1)
+    atual = linha.get(coluna)
+    if operador == "is":
+        return atual is {"true": True, "false": False, "null": None}[valor]
+    if atual is None:
+        return False
+    atual = str(atual)
+    return {
+        "eq": atual == valor,
+        "neq": atual != valor,
+        "lt": atual < valor,
+        "gt": atual > valor,
+        "lte": atual <= valor,
+        "gte": atual >= valor,
+    }[operador]
+
+
 class SupabaseFalso:
     """Auth + Data API em memória. Guarda os pedidos recebidos em `pedidos`."""
 
     def __init__(self) -> None:
-        self.linhas: list[dict] = []
+        self.tabelas: dict[str, list[dict]] = {nome: [] for nome in TABELAS}
         self.pedidos: list[httpx.Request] = []
+
+    # Compatibilidade com os testes do passo 2
+    @property
+    def linhas(self) -> list[dict]:
+        return self.tabelas["pacientes"]
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         self.pedidos.append(request)
-        if request.url.path != "/rest/v1/pacientes":
+        prefixo = "/rest/v1/"
+        tabela = request.url.path.removeprefix(prefixo)
+        if not request.url.path.startswith(prefixo) or tabela not in TABELAS:
             return supabase_falso(request)
 
         token = request.headers.get("Authorization", "").removeprefix("Bearer ")
@@ -57,50 +99,83 @@ class SupabaseFalso:
             return httpx.Response(401, json={"code": "PGRST301", "message": "JWT invalid"})
 
         if request.method == "GET":
-            return httpx.Response(200, json=self._ver(self._filtrar(request, dono)))
+            return httpx.Response(
+                200, json=self._ver(request, self._filtrar(request, tabela, dono))
+            )
         if request.method == "POST":
-            return self._criar(request, dono)
+            return self._criar(request, tabela, dono)
         if request.method == "PATCH":
-            return self._alterar(request, dono)
+            return self._alterar(request, tabela, dono)
         return httpx.Response(405)
 
-    def _filtrar(self, request: httpx.Request, dono: str) -> list[dict]:
+    def _filtrar(self, request: httpx.Request, tabela: str, dono: str) -> list[dict]:
         params = request.url.params
-        linhas = [linha for linha in self.linhas if linha["psicologo_id"] == dono]  # "RLS"
-        if "id" in params:
-            linhas = [linha for linha in linhas if f"eq.{linha['id']}" == params["id"]]
-        if params.get("ativo") == "is.true":
-            linhas = [linha for linha in linhas if linha["ativo"]]
-        if params.get("order") == "nome.asc":
-            linhas = sorted(linhas, key=lambda linha: linha["nome"])
+        linhas = [linha for linha in self.tabelas[tabela] if linha["psicologo_id"] == dono]  # RLS
+        for coluna, condicao in params.multi_items():
+            if coluna not in PARAMETROS_ESPECIAIS:
+                linhas = [linha for linha in linhas if _cumpre(linha, coluna, condicao)]
+        if "order" in params:
+            coluna, sentido = params["order"].split(".")
+            linhas = sorted(linhas, key=lambda linha: str(linha[coluna]), reverse=sentido == "desc")
+        if "limit" in params:
+            linhas = linhas[: int(params["limit"])]
         return linhas
 
     @staticmethod
-    def _ver(linhas: list[dict]) -> list[dict]:
-        return [{k: v for k, v in linha.items() if k != "psicologo_id"} for linha in linhas]
+    def _ver(request: httpx.Request, linhas: list[dict]) -> list[dict]:
+        colunas = request.url.params.get("select", "*").split(",")
+        return [
+            {
+                k: v
+                for k, v in linha.items()
+                if k != "psicologo_id" and (k in colunas or colunas == ["*"])
+            }
+            for linha in linhas
+        ]
 
-    def _criar(self, request: httpx.Request, dono: str) -> httpx.Response:
+    def _violacoes(self, tabela: str, linha: dict, dono: str) -> httpx.Response | None:
+        if tabela != "consultas":
+            return None
+        paciente = next(
+            (
+                p
+                for p in self.tabelas["pacientes"]
+                if p["id"] == linha["paciente_id"] and p["psicologo_id"] == dono
+            ),
+            None,
+        )
+        if paciente is None:  # chave estrangeira (paciente_id, psicologo_id)
+            return httpx.Response(409, json={"code": "23503", "message": "foreign key violation"})
+        if not linha["fim"] > linha["inicio"]:
+            return httpx.Response(400, json={"code": "23514", "message": "check violation"})
+        return None
+
+    def _criar(self, request: httpx.Request, tabela: str, dono: str) -> httpx.Response:
         dados = json.loads(request.content)
-        if set(dados) - COLUNAS_INSERT:
+        if set(dados) - TABELAS[tabela]["insert"]:
             return httpx.Response(403, json={"code": "42501", "message": "permission denied"})
-        agora = datetime.now(UTC).isoformat()
+        agora = _agora()
         linha = {
+            **TABELAS[tabela]["omissao"],
+            **dados,
             "id": str(uuid.uuid4()),
             "psicologo_id": dono,
-            "nome": dados["nome"],
-            "data_nascimento": dados.get("data_nascimento"),
-            "ativo": True,
             "criado_em": agora,
             "atualizado_em": agora,
         }
-        self.linhas.append(linha)
-        return httpx.Response(201, json=self._ver([linha]))
+        if (erro := self._violacoes(tabela, linha, dono)) is not None:
+            return erro
+        self.tabelas[tabela].append(linha)
+        return httpx.Response(201, json=self._ver(request, [linha]))
 
-    def _alterar(self, request: httpx.Request, dono: str) -> httpx.Response:
+    def _alterar(self, request: httpx.Request, tabela: str, dono: str) -> httpx.Response:
         dados = json.loads(request.content)
-        if set(dados) - COLUNAS_UPDATE:
+        if set(dados) - TABELAS[tabela]["update"]:
             return httpx.Response(403, json={"code": "42501", "message": "permission denied"})
-        linhas = self._filtrar(request, dono)
+        linhas = self._filtrar(request, tabela, dono)
         for linha in linhas:
-            linha.update(dados, atualizado_em=datetime.now(UTC).isoformat())
-        return httpx.Response(200, json=self._ver(linhas))
+            if (erro := self._violacoes(tabela, {**linha, **dados}, dono)) is not None:
+                return erro
+        for linha in linhas:
+            linha.update(dados, atualizado_em=_agora())
+        return httpx.Response(200, json=self._ver(request, linhas))

@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from .. import supabase_db as db
 from ..deps import ClientDep, SettingsDep, Token
-from ..modelos import Paciente, PacienteAlteracao, PacienteNovo
+from ..modelos import Consulta, Paciente, PacienteAlteracao, PacienteNovo
 
 router = APIRouter(prefix="/pacientes", tags=["pacientes"])
 
@@ -55,3 +55,13 @@ async def alterar(
     if paciente is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=NAO_ENCONTRADO)
     return paciente
+
+
+@router.get("/{paciente_id}/consultas", response_model=list[Consulta])
+async def consultas_do_paciente(
+    paciente_id: UUID, settings: SettingsDep, client: ClientDep, token: Token
+) -> list[dict]:
+    """Histórico e próximas consultas do paciente (mais recentes primeiro), com as notas."""
+    if await db.obter_paciente(client, settings, token, paciente_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=NAO_ENCONTRADO)
+    return await db.listar_consultas_paciente(client, settings, token, paciente_id)

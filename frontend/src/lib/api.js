@@ -19,7 +19,20 @@ export async function api(path, options = {}) {
     : null
 
   if (!res.ok) {
-    throw new Error(body?.detail ?? `Erro ${res.status} ao contactar a API.`)
+    const erro = new Error(mensagemDeErro(body?.detail, res.status))
+    erro.status = res.status
+    erro.detail = body?.detail
+    throw erro
   }
   return body
+}
+
+// A API responde com texto, com {mensagem, ...} ou, nos erros de validação, com uma lista.
+function mensagemDeErro(detail, status) {
+  if (typeof detail === 'string') return detail
+  if (detail?.mensagem) return detail.mensagem
+  if (Array.isArray(detail) && detail.length > 0) {
+    return detail.map((d) => (d.msg ?? '').replace(/^Value error, /, '')).join(' ')
+  }
+  return `Erro ${status} ao contactar a API.`
 }
