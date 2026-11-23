@@ -1,8 +1,9 @@
 """Supabase falso para testes: responde sem rede.
 
-`SupabaseFalso` imita também a Data API (PostgREST) das tabelas pacientes e consultas, incluindo
-o efeito das regras RLS (cada token só vê as linhas do seu psicólogo), das permissões por coluna
-e da chave estrangeira que obriga a consulta a ser de um paciente do mesmo psicólogo.
+`SupabaseFalso` imita também a Data API (PostgREST) das tabelas pacientes, consultas e briefings,
+incluindo o efeito das regras RLS (cada token só vê as linhas do seu psicólogo), das permissões
+por coluna e das chaves estrangeiras que obrigam a consulta a ser de um paciente do mesmo
+psicólogo e o briefing a ser de uma consulta do mesmo psicólogo (e só um por consulta).
 As regras verdadeiras são testadas na base de dados com supabase/tests/*.sql.
 """
 
@@ -30,6 +31,11 @@ TABELAS = {
         "insert": {"paciente_id", "inicio", "fim", "estado", "notas"},
         "update": {"inicio", "fim", "estado", "notas"},
         "omissao": {"estado": "agendada", "notas": None},
+    },
+    "briefings": {
+        "insert": {"consulta_id", "texto", "modelo", "sessoes_usadas"},
+        "update": {"texto", "revisto", "modelo", "sessoes_usadas", "gerado_em"},
+        "omissao": {"revisto": False, "sessoes_usadas": 0},
     },
 }
 
@@ -134,6 +140,22 @@ class SupabaseFalso:
         ]
 
     def _violacoes(self, tabela: str, linha: dict, dono: str) -> httpx.Response | None:
+        if tabela == "briefings":
+            consulta = next(
+                (
+                    c
+                    for c in self.tabelas["consultas"]
+                    if c["id"] == linha["consulta_id"] and c["psicologo_id"] == dono
+                ),
+                None,
+            )
+            if consulta is None:  # chave estrangeira (consulta_id, psicologo_id)
+                return httpx.Response(
+                    409, json={"code": "23503", "message": "foreign key violation"}
+                )
+            if not linha["texto"]:
+                return httpx.Response(400, json={"code": "23514", "message": "check violation"})
+            return None
         if tabela != "consultas":
             return None
         paciente = next(
@@ -163,6 +185,10 @@ class SupabaseFalso:
             "criado_em": agora,
             "atualizado_em": agora,
         }
+        if tabela == "briefings":
+            linha["gerado_em"] = agora
+            if any(b["consulta_id"] == linha["consulta_id"] for b in self.tabelas["briefings"]):
+                return httpx.Response(409, json={"code": "23505", "message": "unique violation"})
         if (erro := self._violacoes(tabela, linha, dono)) is not None:
             return erro
         self.tabelas[tabela].append(linha)

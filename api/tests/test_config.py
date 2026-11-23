@@ -27,3 +27,35 @@ def test_recusa_ambiente_desconhecido():
 
 def test_le_commit_do_vercel():
     assert read_settings({**OK, "VERCEL_GIT_COMMIT_SHA": "abcdef1234"}).commit == "abcdef1"
+
+
+def test_ia_e_opcional():
+    s = read_settings(OK)
+    assert s.ia_configurada is False
+
+
+def test_le_ia_e_aceita_o_endereco_copiado_do_portal():
+    s = read_settings(
+        {
+            **OK,
+            "AZURE_OPENAI_BASE_URL": "https://r.services.ai.azure.com/openai/v1/responses",
+            "AZURE_OPENAI_API_KEY": " chave-ficticia ",
+            "AZURE_OPENAI_DEPLOYMENT": "briefing",
+        }
+    )
+    assert s.ia_configurada
+    assert s.ia_base_url == "https://r.services.ai.azure.com/openai/v1"
+    assert s.ia_api_key == "chave-ficticia"
+    assert "chave-ficticia" not in repr(s)  # a chave nunca aparece em registos
+
+
+def test_endereco_da_ia_invalido_desliga_so_a_ia():
+    s = read_settings(
+        {
+            **OK,
+            "AZURE_OPENAI_BASE_URL": "http://inseguro.example",
+            "AZURE_OPENAI_API_KEY": "x",
+            "AZURE_OPENAI_DEPLOYMENT": "briefing",
+        }
+    )
+    assert s.ia_configurada is False

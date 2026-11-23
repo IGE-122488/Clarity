@@ -18,6 +18,9 @@ COLUNAS_PACIENTE = "id,nome,data_nascimento,ativo,criado_em,atualizado_em"
 # Na agenda não vêm as notas (minimização): só ao abrir a consulta ou o histórico do paciente.
 COLUNAS_CONSULTA_AGENDA = "id,paciente_id,inicio,fim,estado,criado_em,atualizado_em"
 COLUNAS_CONSULTA = COLUNAS_CONSULTA_AGENDA + ",notas"
+COLUNAS_BRIEFING = (
+    "id,consulta_id,texto,revisto,modelo,sessoes_usadas,gerado_em,criado_em,atualizado_em"
+)
 
 
 class SessaoInvalida(Exception):
@@ -186,6 +189,26 @@ async def listar_consultas_paciente(
     return await _listar(client, settings, token, "consultas", params)
 
 
+async def sessoes_realizadas_antes(
+    client: httpx.AsyncClient,
+    settings: Settings,
+    token: str,
+    paciente_id: UUID,
+    antes_de: datetime,
+    limite: int = 20,
+) -> list[dict]:
+    """Sessões realizadas do paciente antes de uma data, com notas, das mais recentes primeiro."""
+    params = {
+        "select": COLUNAS_CONSULTA,
+        "paciente_id": f"eq.{paciente_id}",
+        "estado": "eq.realizada",
+        "inicio": f"lt.{iso_utc(antes_de)}",
+        "order": "inicio.desc",
+        "limit": str(limite),
+    }
+    return await _listar(client, settings, token, "consultas", params)
+
+
 async def consultas_sobrepostas(
     client: httpx.AsyncClient,
     settings: Settings,
@@ -225,4 +248,34 @@ async def atualizar_consulta(
 ) -> dict | None:
     return await _atualizar(
         client, settings, token, "consultas", COLUNAS_CONSULTA, consulta_id, dados
+    )
+
+
+# Briefings (um por consulta)
+
+
+async def obter_briefing(
+    client: httpx.AsyncClient, settings: Settings, token: str, consulta_id: UUID
+) -> dict | None:
+    linhas = await _listar(
+        client,
+        settings,
+        token,
+        "briefings",
+        {"select": COLUNAS_BRIEFING, "consulta_id": f"eq.{consulta_id}"},
+    )
+    return linhas[0] if linhas else None
+
+
+async def criar_briefing(
+    client: httpx.AsyncClient, settings: Settings, token: str, dados: dict
+) -> dict:
+    return await _criar(client, settings, token, "briefings", COLUNAS_BRIEFING, dados)
+
+
+async def atualizar_briefing(
+    client: httpx.AsyncClient, settings: Settings, token: str, briefing_id: UUID, dados: dict
+) -> dict | None:
+    return await _atualizar(
+        client, settings, token, "briefings", COLUNAS_BRIEFING, briefing_id, dados
     )
