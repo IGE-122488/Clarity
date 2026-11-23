@@ -75,7 +75,7 @@ body {
 }
 
 .content {
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
@@ -221,4 +221,266 @@ input:focus-visible {
   .form-inline {
     grid-template-columns: 1fr;
   }
+}
+
+/* Campos e botões comuns */
+select,
+textarea {
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+}
+
+textarea {
+  resize: vertical;
+  width: 100%;
+}
+
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.botao-secundario {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--border);
+}
+
+.aviso {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: var(--warning-bg);
+  color: var(--warning-ink);
+}
+
+.aviso p {
+  margin: 0 0 0.6rem;
+}
+
+/* Agenda */
+.agenda-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.agenda-cabecalho h1 {
+  margin: 0 0.5rem 0 0;
+}
+
+.agenda-navegacao {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.agenda-navegacao button {
+  padding: 0.45rem 0.8rem;
+}
+
+.agenda-intervalo {
+  font-weight: 600;
+  margin-right: auto;
+}
+
+.agenda-corpo {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin-top: 1rem;
+}
+
+.agenda {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 3.5rem repeat(7, minmax(0, 1fr));
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.agenda-dia-titulo {
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.agenda-dia-titulo.hoje {
+  color: var(--ink);
+  background: var(--sage-light);
+}
+
+.agenda-hora {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: right;
+  padding: 0.15rem 0.4rem 0 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.agenda-dia {
+  border-left: 1px solid var(--border);
+}
+
+.agenda-coluna {
+  position: relative;
+}
+
+.agenda-celula {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+}
+
+.agenda-celula:hover {
+  background: var(--sage-light);
+}
+
+.agenda-consulta {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  overflow: hidden;
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+  border-left: 4px solid var(--teal);
+  background: #dceae5;
+  color: var(--ink);
+  font-size: 0.78rem;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.agenda-consulta span {
+  color: var(--muted);
+}
+
+.agenda-consulta.estado-realizada {
+  border-left-color: var(--ink);
+  background: #e9eef0;
+}
+
+.agenda-consulta.estado-faltou {
+  border-left-color: #b45309;
+  background: #fbeee0;
+}
+
+.agenda-consulta.estado-cancelada {
+  border-left-color: #9ca3af;
+  background: #f3f4f6;
+  text-decoration: line-through;
+}
+
+/* Painel de consulta */
+.painel {
+  width: 360px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.painel-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.painel-topo h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.linha-campos {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.painel-acoes {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Ficha do paciente */
+.lista-consultas {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.lista-consultas li {
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.consulta-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.etiqueta {
+  font-size: 0.8rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--sage-light);
+}
+
+.etiqueta.estado-faltou {
+  background: #fbeee0;
+  color: #7c3a06;
+}
+
+.etiqueta.estado-cancelada {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.notas-acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.tabela a {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.agenda-opcoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.agenda-opcoes .checkbox {
+  margin: 0;
+  white-space: nowrap;
 }

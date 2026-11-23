@@ -117,7 +117,9 @@ export function Pacientes() {
           <tbody>
             {pacientes.map((p) => (
               <tr key={p.id}>
-                <td>{p.nome}</td>
+                <td>
+                  <Link to={`/pacientes/${p.id}`}>{p.nome}</Link>
+                </td>
                 <td>{formatarData(p.data_nascimento)}</td>
                 <td>{p.ativo ? 'Ativo' : 'Arquivado'}</td>
                 <td>

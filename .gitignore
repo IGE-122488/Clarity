@@ -28,3 +28,6 @@ supabase/.branches/
 .idea/
 .DS_Store
 *.log
+
+# Ficheiros que a app do Claude guarda na pasta do repositório (documentos, zips): nunca vão para o GitHub
+Claude outputs/

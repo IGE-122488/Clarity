@@ -8,8 +8,8 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from .config import get_settings
-from .routes import estado, pacientes
-from .supabase_db import ErroBaseDados, SemPermissao, SessaoInvalida
+from .routes import consultas, estado, pacientes
+from .supabase_db import Conflito, ErroBaseDados, SemPermissao, SessaoInvalida
 
 settings = get_settings()
 
@@ -24,6 +24,7 @@ app = FastAPI(
 
 app.include_router(estado.router, prefix="/api")
 app.include_router(pacientes.router, prefix="/api")
+app.include_router(consultas.router, prefix="/api")
 
 
 # Erros da base de dados → respostas claras, sem detalhes internos (podem conter dados).
@@ -49,4 +50,14 @@ async def _erro_base_dados(_request: Request, _exc: ErroBaseDados) -> JSONRespon
     return JSONResponse(
         status_code=status.HTTP_502_BAD_GATEWAY,
         content={"detail": "Não foi possível contactar a base de dados. Tente de novo."},
+    )
+
+
+@app.exception_handler(Conflito)
+async def _conflito(_request: Request, _exc: Conflito) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={
+            "detail": "Os dados não respeitam as regras (por exemplo, paciente de outro psicólogo)."
+        },
     )

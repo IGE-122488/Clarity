@@ -3,11 +3,18 @@
 `extra="forbid"`: campos desconhecidos (por exemplo psicologo_id) são recusados com erro 422.
 """
 
-from datetime import date, datetime
-from typing import Annotated
+from datetime import date, datetime, timedelta
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
 Nome = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 
@@ -61,3 +68,75 @@ class Paciente(BaseModel):
     ativo: bool
     criado_em: datetime
     atualizado_em: datetime
+
+
+# Consultas (agenda)
+
+EstadoConsulta = Literal["agendada", "realizada", "cancelada", "faltou"]
+Notas = Annotated[str, StringConstraints(max_length=20000)]
+DURACAO_MAXIMA = timedelta(hours=8)
+
+
+def validar_horario(inicio: datetime, fim: datetime) -> None:
+    """Regras comuns a marcar e a remarcar. Lança ValueError com a mensagem para o utilizador."""
+    if not 2000 <= inicio.year <= 2100:
+        raise ValueError("A data da consulta não é válida.")
+    if fim <= inicio:
+        raise ValueError("A consulta tem de acabar depois de começar.")
+    if fim - inicio > DURACAO_MAXIMA:
+        raise ValueError("Uma consulta não pode durar mais de 8 horas.")
+
+
+class ConsultaNova(BaseModel):
+    """`ignorar_sobreposicao: true` marca mesmo que já haja outra consulta nesse horário."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    paciente_id: UUID
+    inicio: AwareDatetime
+    fim: AwareDatetime
+    estado: EstadoConsulta = "agendada"
+    notas: Notas | None = None
+    ignorar_sobreposicao: bool = False
+
+    @model_validator(mode="after")
+    def verificar_horario(self) -> "ConsultaNova":
+        validar_horario(self.inicio, self.fim)
+        return self
+
+
+class ConsultaAlteracao(BaseModel):
+    """Só os campos enviados são alterados. Remarcar = mudar inicio/fim; cancelar = estado."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    inicio: AwareDatetime | None = None
+    fim: AwareDatetime | None = None
+    estado: EstadoConsulta | None = None
+    notas: Notas | None = None
+    ignorar_sobreposicao: bool = False
+
+    @model_validator(mode="after")
+    def verificar_campos(self) -> "ConsultaAlteracao":
+        if not self.model_fields_set - {"ignorar_sobreposicao"}:
+            raise ValueError("Indique pelo menos um campo a alterar.")
+        for campo in ("inicio", "fim", "estado"):
+            if campo in self.model_fields_set and getattr(self, campo) is None:
+                raise ValueError(f"O campo '{campo}' não pode ficar vazio.")
+        return self
+
+
+class ConsultaAgenda(BaseModel):
+    """Consulta como aparece na agenda: sem as notas."""
+
+    id: UUID
+    paciente_id: UUID
+    inicio: datetime
+    fim: datetime
+    estado: EstadoConsulta
+    criado_em: datetime
+    atualizado_em: datetime
+
+
+class Consulta(ConsultaAgenda):
+    notas: str | None
