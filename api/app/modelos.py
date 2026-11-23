@@ -140,3 +140,40 @@ class ConsultaAgenda(BaseModel):
 
 class Consulta(ConsultaAgenda):
     notas: str | None
+
+
+# Briefings (passo 4)
+
+TextoBriefing = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=20000)
+]
+
+
+class BriefingAlteracao(BaseModel):
+    """O psicólogo edita o texto e/ou marca o briefing como revisto."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    texto: TextoBriefing | None = None
+    revisto: bool | None = None
+
+    @model_validator(mode="after")
+    def verificar_campos(self) -> "BriefingAlteracao":
+        if not self.model_fields_set:
+            raise ValueError("Indique pelo menos um campo a alterar.")
+        for campo in ("texto", "revisto"):
+            if campo in self.model_fields_set and getattr(self, campo) is None:
+                raise ValueError(f"O campo '{campo}' não pode ficar vazio.")
+        return self
+
+
+class Briefing(BaseModel):
+    id: UUID
+    consulta_id: UUID
+    texto: str
+    revisto: bool
+    modelo: str
+    sessoes_usadas: int
+    gerado_em: datetime
+    criado_em: datetime
+    atualizado_em: datetime

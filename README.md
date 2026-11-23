@@ -43,6 +43,8 @@ uvicorn app.main:app --reload --port 8000 --env-file .env
 
 Documentação interativa da API: <http://localhost:8000/api/docs>
 
+Testar a ligação à IA do briefing (passo 4), com o `api/.env` preenchido: `python scripts/testar_ia.py`
+
 > Se o PowerShell bloquear o `activate`, corram uma vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` e tentem de novo.
 
 **Terminal 2 — Frontend (React):**

@@ -4,7 +4,7 @@ Falha cedo, com uma mensagem clara, se faltar alguma variável obrigatória.
 """
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 
 APP_ENVS = ("development", "preview", "production")
@@ -20,6 +20,14 @@ class Settings:
     supabase_publishable_key: str
     app_env: str
     commit: str | None = None
+    # IA (Azure OpenAI). Opcional: sem estas variáveis, só o briefing fica indisponível (503).
+    ia_base_url: str | None = None
+    ia_api_key: str | None = field(default=None, repr=False)  # nunca aparecer em registos
+    ia_deployment: str | None = None
+
+    @property
+    def ia_configurada(self) -> bool:
+        return bool(self.ia_base_url and self.ia_api_key and self.ia_deployment)
 
 
 def read_settings(env: dict[str, str] | None = None) -> Settings:
@@ -43,7 +51,24 @@ def read_settings(env: dict[str, str] | None = None) -> Settings:
         raise ConfigError(f'APP_ENV inválido: "{app_env}". Use {", ".join(APP_ENVS)}.')
 
     commit = env.get("VERCEL_GIT_COMMIT_SHA", "")[:7] or None
-    return Settings(url, key, app_env, commit)
+
+    # Aceita o endereço com ou sem "/responses" no fim (é o que o portal do Azure mostra).
+    ia_base_url = env.get("AZURE_OPENAI_BASE_URL", "").strip().rstrip("/")
+    ia_base_url = ia_base_url.removesuffix("/responses").rstrip("/")
+    if not ia_base_url.startswith("https://"):
+        ia_base_url = (
+            ""  # endereço inválido = IA não configurada (o resto da API continua a funcionar)
+        )
+
+    return Settings(
+        url,
+        key,
+        app_env,
+        commit,
+        ia_base_url=ia_base_url or None,
+        ia_api_key=env.get("AZURE_OPENAI_API_KEY", "").strip() or None,
+        ia_deployment=env.get("AZURE_OPENAI_DEPLOYMENT", "").strip() or None,
+    )
 
 
 @lru_cache
