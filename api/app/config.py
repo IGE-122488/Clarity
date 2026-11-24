@@ -24,10 +24,17 @@ class Settings:
     ia_base_url: str | None = None
     ia_api_key: str | None = field(default=None, repr=False)  # nunca aparecer em registos
     ia_deployment: str | None = None
+    # OCR (Azure Document Intelligence). Opcional: sem isto, só a digitalização fica indisponível.
+    ocr_endpoint: str | None = None
+    ocr_key: str | None = field(default=None, repr=False)  # nunca aparecer em registos
 
     @property
     def ia_configurada(self) -> bool:
         return bool(self.ia_base_url and self.ia_api_key and self.ia_deployment)
+
+    @property
+    def ocr_configurado(self) -> bool:
+        return bool(self.ocr_endpoint and self.ocr_key)
 
 
 def read_settings(env: dict[str, str] | None = None) -> Settings:
@@ -60,6 +67,10 @@ def read_settings(env: dict[str, str] | None = None) -> Settings:
             ""  # endereço inválido = IA não configurada (o resto da API continua a funcionar)
         )
 
+    ocr_endpoint = env.get("AZURE_DOCINTEL_ENDPOINT", "").strip().rstrip("/")
+    if not ocr_endpoint.startswith("https://"):
+        ocr_endpoint = ""  # endereço inválido = OCR não configurado
+
     return Settings(
         url,
         key,
@@ -68,6 +79,8 @@ def read_settings(env: dict[str, str] | None = None) -> Settings:
         ia_base_url=ia_base_url or None,
         ia_api_key=env.get("AZURE_OPENAI_API_KEY", "").strip() or None,
         ia_deployment=env.get("AZURE_OPENAI_DEPLOYMENT", "").strip() or None,
+        ocr_endpoint=ocr_endpoint or None,
+        ocr_key=env.get("AZURE_DOCINTEL_KEY", "").strip() or None,
     )
 
 

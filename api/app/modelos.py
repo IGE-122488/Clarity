@@ -177,3 +177,12 @@ class Briefing(BaseModel):
     gerado_em: datetime
     criado_em: datetime
     atualizado_em: datetime
+
+
+# OCR (passo 5)
+
+
+class TextoLido(BaseModel):
+    """Texto lido numa fotografia, para o psicólogo rever antes de o acrescentar às notas."""
+
+    texto: str

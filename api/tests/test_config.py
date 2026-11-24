@@ -59,3 +59,24 @@ def test_endereco_da_ia_invalido_desliga_so_a_ia():
         }
     )
     assert s.ia_configurada is False
+
+
+def test_le_ocr_e_esconde_a_chave():
+    s = read_settings(
+        {
+            **OK,
+            "AZURE_DOCINTEL_ENDPOINT": "https://ocr.cognitiveservices.azure.com/",
+            "AZURE_DOCINTEL_KEY": " chave-ocr ",
+        }
+    )
+    assert s.ocr_configurado
+    assert s.ocr_endpoint == "https://ocr.cognitiveservices.azure.com"
+    assert s.ocr_key == "chave-ocr"
+    assert "chave-ocr" not in repr(s)
+    assert read_settings(OK).ocr_configurado is False
+    assert (
+        read_settings(
+            {**OK, "AZURE_DOCINTEL_ENDPOINT": "http://x", "AZURE_DOCINTEL_KEY": "k"}
+        ).ocr_configurado
+        is False
+    )
