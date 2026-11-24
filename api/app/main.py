@@ -9,7 +9,8 @@ from fastapi.responses import JSONResponse
 
 from .config import get_settings
 from .ia import ErroIA, IANaoConfigurada
-from .routes import briefings, consultas, estado, pacientes
+from .ocr import ErroOCR, OCRNaoConfigurado
+from .routes import briefings, consultas, estado, ocr, pacientes
 from .supabase_db import Conflito, ErroBaseDados, SemPermissao, SessaoInvalida
 
 settings = get_settings()
@@ -27,6 +28,7 @@ app.include_router(estado.router, prefix="/api")
 app.include_router(pacientes.router, prefix="/api")
 app.include_router(consultas.router, prefix="/api")
 app.include_router(briefings.router, prefix="/api")
+app.include_router(ocr.router, prefix="/api")
 
 
 # Erros da base de dados → respostas claras, sem detalhes internos (podem conter dados).
@@ -76,4 +78,18 @@ async def _ia_nao_configurada(_request: Request, _exc: IANaoConfigurada) -> JSON
 @app.exception_handler(ErroIA)
 async def _erro_ia(_request: Request, exc: ErroIA) -> JSONResponse:
     # A mensagem foi escrita por nós em app/ia.py: nunca contém notas nem respostas do Azure.
+    return JSONResponse(status_code=exc.codigo, content={"detail": str(exc)})
+
+
+@app.exception_handler(OCRNaoConfigurado)
+async def _ocr_nao_configurado(_request: Request, _exc: OCRNaoConfigurado) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": "A digitalização de notas ainda não está configurada neste ambiente."},
+    )
+
+
+@app.exception_handler(ErroOCR)
+async def _erro_ocr(_request: Request, exc: ErroOCR) -> JSONResponse:
+    # A mensagem foi escrita por nós em app/ocr.py: nunca contém a imagem nem o texto lido.
     return JSONResponse(status_code=exc.codigo, content={"detail": str(exc)})

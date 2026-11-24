@@ -45,6 +45,8 @@ Documentação interativa da API: <http://localhost:8000/api/docs>
 
 Testar a ligação à IA do briefing (passo 4), com o `api/.env` preenchido: `python scripts/testar_ia.py`
 
+Testar o OCR (passo 5) com uma fotografia de notas fictícias: `python scripts/testar_ocr.py caminho\para\foto.jpg`
+
 > Se o PowerShell bloquear o `activate`, corram uma vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` e tentem de novo.
 
 **Terminal 2 — Frontend (React):**

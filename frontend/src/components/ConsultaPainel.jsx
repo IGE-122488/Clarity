@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../lib/api'
 import { BriefingConsulta } from './BriefingConsulta'
+import { DigitalizarNotas } from './DigitalizarNotas'
 import { deInputs, formatarHora, paraInputData, paraInputHora } from '../lib/datas'
 
 const DURACOES = [30, 45, 50, 60, 90, 120]
@@ -173,6 +174,8 @@ export function ConsultaPainel({ consultaId, inicioSugerido, pacientes, nomeDoPa
               placeholder="Apenas dados fictícios."
             />
           </label>
+
+          <DigitalizarNotas onAcrescentar={(texto) => setNotas((n) => (n.trim() ? `${n.trimEnd()}\n\n${texto}` : texto))} />
 
           {sobrepostas && (
             <div className="aviso" role="alert">
