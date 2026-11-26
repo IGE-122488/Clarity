@@ -208,11 +208,33 @@ export function Sino({ session }) {
     }
   }
 
+  const [pedidoIgnorado, setPedidoIgnorado] = useState(false)
+  const [testeEnviado, setTesteEnviado] = useState(false)
+
+  // A permissão é guardada por site: autorizar em localhost não autoriza o site na Vercel.
+  // Pode também ser mudada nas definições do site sem recarregar a página: lê-se de novo ao abrir o sino.
+  useEffect(() => {
+    if (aberto && suportaNotificacoes()) setPermissao(Notification.permission)
+  }, [aberto])
+
   async function pedirPermissao() {
+    let resposta
     try {
-      setPermissao(await Notification.requestPermission())
+      resposta = await Notification.requestPermission()
     } catch {
-      setPermissao(Notification.permission)
+      resposta = Notification.permission
+    }
+    setPermissao(resposta)
+    // O Chrome às vezes não mostra o pedido (só um sino riscado na barra de endereço).
+    setPedidoIgnorado(resposta === 'default')
+  }
+
+  function enviarTeste() {
+    try {
+      new Notification('Clarity', { body: 'Notificação de teste. Os avisos das consultas vão aparecer assim.' })
+      setTesteEnviado(true)
+    } catch {
+      setTesteEnviado(false)
     }
   }
 
@@ -315,8 +337,21 @@ export function Sino({ session }) {
                 Avisar também com notificações do computador (sem o nome do paciente)
               </button>
             )}
-            {permissao === 'denied' && (
-              <p className="hint">As notificações do computador estão bloqueadas neste browser.</p>
+            {(permissao === 'denied' || pedidoIgnorado) && (
+              <p className="hint">
+                As notificações do computador estão {permissao === 'denied' ? 'bloqueadas' : 'por autorizar'} neste
+                site. Para as ativar: clique no ícone à esquerda do endereço → <strong>Notificações</strong> →{' '}
+                <strong>Permitir</strong>, e recarregue a página.
+              </p>
+            )}
+            {permissao === 'granted' && (
+              <p className="hint">
+                Notificações do computador ativas neste site (aparecem quando sai da app).{' '}
+                <button type="button" className="link-button" onClick={enviarTeste}>
+                  Enviar uma de teste
+                </button>
+                {testeEnviado && ' Enviada. Se não a viu, verifique se o Windows tem as notificações do browser ligadas.'}
+              </p>
             )}
             <p className="hint">Os avisos só aparecem com a Clarity aberta num separador.</p>
           </div>
