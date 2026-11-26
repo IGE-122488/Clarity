@@ -203,3 +203,99 @@ def test_editar_sem_briefing_ou_de_outra_psicologa_da_404(api, cenario):
     api.post(caminho(cenario["consulta"]), headers=ANA)
     res = api.patch(caminho(cenario["consulta"]), json={"texto": "Do B"}, headers=OUTRA)
     assert res.status_code == 404
+
+
+# Geração automática pelo sino (passo 6): ?so_se_nao_existir=true
+
+
+def auto(consulta_id):
+    return caminho(consulta_id) + "?so_se_nao_existir=true"
+
+
+def test_automatico_gera_quando_ainda_nao_ha(api, cenario, gerador):
+    res = api.post(auto(cenario["consulta"]), headers=ANA)
+    assert res.status_code == 200, res.text
+    assert res.json()["texto"] == gerador.texto
+    assert len(gerador.pedidos) == 1
+
+
+def test_automatico_nunca_apaga_o_que_o_psicologo_editou(api, cenario, gerador):
+    api.post(caminho(cenario["consulta"]), headers=ANA)
+    editado = {"texto": "Texto editado pela psicóloga", "revisto": True}
+    api.patch(caminho(cenario["consulta"]), json=editado, headers=ANA)
+
+    gerador.texto = "Texto que não pode aparecer"
+    res = api.post(auto(cenario["consulta"]), headers=ANA)
+    assert res.status_code == 200
+    assert res.json()["texto"] == "Texto editado pela psicóloga"
+    assert res.json()["revisto"] is True
+    assert len(gerador.pedidos) == 1  # a IA não foi chamada outra vez
+
+
+def test_automatico_mantem_as_regras_de_sempre(api, cenario, gerador):
+    p = paciente(api, nome="Sem notas")
+    sem_notas = marcar(api, p, inicio=PROXIMA + timedelta(days=1))["id"]
+    assert api.post(auto(sem_notas), headers=ANA).status_code == 422
+    assert api.post(auto(ID_INEXISTENTE), headers=ANA).status_code == 404
+    assert api.post(auto(cenario["consulta"]), headers=OUTRA).status_code == 404
+
+    api.patch(f"/api/consultas/{cenario['consulta']}", json={"estado": "cancelada"}, headers=ANA)
+    assert api.post(auto(cenario["consulta"]), headers=ANA).status_code == 409
+    assert gerador.pedidos == []
+
+
+def test_dois_pedidos_ao_mesmo_tempo_ficam_com_um_so_briefing(api):
+    """Se outro separador criar o briefing enquanto a IA responde, fica o que já lá está."""
+    sb = SupabaseFalso()
+    usar_supabase(sb)  # o fixture `api` limpa as substituições no fim
+    p = paciente(api, nome=NOME)
+    sessao(api, p, 7, notas="Notas fictícias.")
+    consulta = marcar(api, p, inicio=PROXIMA)["id"]
+
+    async def gerador_lento(_client, _settings, *, instrucoes, entrada):
+        agora = "2030-01-28T11:45:00Z"
+        sb.tabelas["briefings"].append(
+            {
+                "id": "00000000-0000-4000-8000-0000000000b1",
+                "psicologo_id": "uuid-psicologa-ficticia",
+                "consulta_id": consulta,
+                "texto": "Criado pelo outro separador",
+                "revisto": False,
+                "modelo": "gpt-5-mini-teste",
+                "sessoes_usadas": 1,
+                "gerado_em": agora,
+                "criado_em": agora,
+                "atualizado_em": agora,
+            }
+        )
+        return RespostaIA(texto="Criado por este pedido", modelo="gpt-5-mini-teste")
+
+    app.dependency_overrides[get_gerador] = lambda: gerador_lento
+    res = api.post(auto(consulta), headers=ANA)
+    assert res.status_code == 200, res.text
+    assert res.json()["texto"] == "Criado pelo outro separador"
+    assert len([b for b in sb.tabelas["briefings"] if b["consulta_id"] == consulta]) == 1
+
+
+def test_se_a_base_de_dados_recusar_o_duplicado_devolve_o_existente(api, monkeypatch):
+    """Corrida no último instante: o insert dá 409 (unique) e a API devolve o que já existe."""
+    from app.routes import briefings as rota
+
+    sb = SupabaseFalso()
+    usar_supabase(sb)
+    p = paciente(api, nome=NOME)
+    sessao(api, p, 7, notas="Notas fictícias.")
+    consulta = marcar(api, p, inicio=PROXIMA)["id"]
+    api.post(caminho(consulta), headers=ANA)  # já existe um briefing
+
+    real = rota.db.obter_briefing
+    chamadas = {"n": 0}
+
+    async def nao_ve_na_primeira(*args, **kwargs):
+        chamadas["n"] += 1
+        return None if chamadas["n"] == 1 else await real(*args, **kwargs)
+
+    monkeypatch.setattr(rota.db, "obter_briefing", nao_ve_na_primeira)
+    res = api.post(caminho(consulta), headers=ANA)
+    assert res.status_code == 200, res.text
+    assert len([b for b in sb.tabelas["briefings"] if b["consulta_id"] == consulta]) == 1

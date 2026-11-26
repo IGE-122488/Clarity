@@ -13,7 +13,7 @@ Browser ──► frontend/ (React, JavaScript)  ── só ecrãs e login
               ▼
             api/ (FastAPI, Python) ── toda a lógica: pacientes, notas, OCR, IA, briefing
               │  usa o token do psicólogo ──► Supabase (PostgreSQL com RLS, Storage) na UE
-              └► Azure AI (OCR e resumos) · Brevo (avisos por email, sem dados clínicos)
+              └► Azure AI (OCR e briefing)
 ```
 
 | Pasta | Linguagem | O que tem |
@@ -46,6 +46,8 @@ Documentação interativa da API: <http://localhost:8000/api/docs>
 Testar a ligação à IA do briefing (passo 4), com o `api/.env` preenchido: `python scripts/testar_ia.py`
 
 Testar o OCR (passo 5) com uma fotografia de notas fictícias: `python scripts/testar_ocr.py caminho\para\foto.jpg`
+
+Avisos (passo 6): o sino no topo da app avisa 15 min antes de cada consulta (e gera o briefing, se ainda não houver), mostra as consultas de amanhã e as consultas passadas ainda como Agendada. Funciona só com a app aberta num separador: não há emails nem tarefas agendadas no servidor.
 
 > Se o PowerShell bloquear o `activate`, corram uma vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` e tentem de novo.
 
