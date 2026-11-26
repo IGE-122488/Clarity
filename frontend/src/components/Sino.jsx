@@ -19,6 +19,7 @@ const ATUALIZAR_MS = 2 * 60 * 1000 // vai buscar as consultas de 2 em 2 minutos
 const RELOGIO_MS = 30 * 1000 // recalcula os avisos de 30 em 30 segundos
 const MAX_GUARDADOS = 200
 const MAX_LISTADAS = 5
+const MINUTOS_SEGUNDO_AVISO = 5 // 2.º aviso do computador, perto da hora da consulta
 
 const suportaNotificacoes = () => typeof window !== 'undefined' && 'Notification' in window
 
@@ -59,6 +60,8 @@ export function Sino({ session }) {
   const [vistos, setVistos] = useState(() => ler(utilizador, 'avisosVistos', []))
   const [permissao, setPermissao] = useState(() => (suportaNotificacoes() ? Notification.permission : null))
   const pedidos = useRef(new Set()) // consultas cujo briefing já foi pedido nesta sessão do separador
+  const [escondida, setEscondida] = useState(() => document.visibilityState === 'hidden')
+  const abertas = useRef([]) // notificações do computador ainda visíveis
 
   // Consultas dos últimos 30 dias até ao fim de amanhã, e os nomes dos pacientes.
   const carregar = useCallback(async () => {
@@ -81,7 +84,15 @@ export function Sino({ session }) {
     carregar()
     const intervalo = setInterval(carregar, ATUALIZAR_MS)
     const relogio = setInterval(() => setAgora(new Date()), RELOGIO_MS)
-    const aoVoltar = () => document.visibilityState === 'visible' && carregar()
+    const aoVoltar = () => {
+      const visivel = document.visibilityState === 'visible'
+      setEscondida(!visivel)
+      if (!visivel) return
+      carregar()
+      // De volta à app: as notificações do computador já não são precisas (e o tempo nelas envelhece).
+      abertas.current.forEach((n) => n.close())
+      abertas.current = []
+    }
     window.addEventListener(CONSULTAS_ALTERADAS, carregar)
     document.addEventListener('visibilitychange', aoVoltar)
     return () => {
@@ -127,18 +138,26 @@ export function Sino({ session }) {
     }
   }, [proximas, automatico])
 
-  // Notificação do computador, uma vez por consulta, sem o nome do paciente.
+  // Notificações do computador, sem o nome do paciente: um 1.º aviso nos 15 min antes e um 2.º aviso
+  // nos últimos 5 min. Só são criadas quando a psicóloga não está a ver a app (com a app à frente, o
+  // sino chega) e nesse momento, para o tempo que mostram ser o real. Levam também a hora da
+  // consulta, que continua certa mesmo lida mais tarde. Cada aviso aparece no máximo uma vez.
   useEffect(() => {
-    if (permissao !== 'granted' || proximas.length === 0) return
-    const notificadas = ler(utilizador, 'consultasNotificadas', [])
-    const porNotificar = proximas.filter((c) => !notificadas.includes(c.id))
-    if (porNotificar.length === 0) return
-    for (const c of porNotificar) {
+    if (permissao !== 'granted' || !escondida || proximas.length === 0) return
+    const enviados = ler(utilizador, 'avisosComputador', [])
+    const novos = []
+    for (const c of proximas) {
+      const inicio = new Date(c.inicio)
+      const minutos = minutosAte(inicio, new Date())
+      const ultimo = minutos <= MINUTOS_SEGUNDO_AVISO
+      if (enviados.includes(`${c.id}:${ultimo ? 2 : 1}`) || (!ultimo && enviados.includes(`${c.id}:2`))) continue
       try {
         const aviso = new Notification('Clarity', {
-          body: `Consulta daqui a ${minutosAte(c.inicio, new Date())} min. O briefing está na app.`,
-          tag: `clarity-${c.id}`,
+          body: `Consulta às ${formatarHora(inicio)} (daqui a ${minutos} min). O briefing está na app.`,
+          tag: `clarity-${c.id}`, // o 2.º aviso substitui o 1.º, em vez de se acumularem
+          renotify: true,
         })
+        abertas.current.push(aviso)
         aviso.onclick = () => {
           window.focus()
           navigate(linkDaConsulta(c))
@@ -147,9 +166,11 @@ export function Sino({ session }) {
       } catch {
         // Alguns browsers (ex.: Android) só permitem notificações através de um service worker.
       }
+      // Um 1.º aviso já dentro dos últimos 5 min conta também como 2.º (não se repete).
+      novos.push(...(ultimo ? [`${c.id}:1`, `${c.id}:2`] : [`${c.id}:1`]))
     }
-    guardar(utilizador, 'consultasNotificadas', [...notificadas, ...porNotificar.map((c) => c.id)].slice(-MAX_GUARDADOS))
-  }, [proximas, permissao, utilizador, navigate])
+    if (novos.length > 0) guardar(utilizador, 'avisosComputador', [...enviados, ...novos].slice(-MAX_GUARDADOS))
+  }, [proximas, permissao, escondida, utilizador, navigate])
 
   // Ao abrir o sino, os avisos atuais passam a "vistos".
   useEffect(() => {
