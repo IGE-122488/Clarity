@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { formatarDia, formatarHora } from '../lib/datas'
+import { BRIEFING_AUTOMATICO, briefingAGerar } from '../lib/eventos'
 
 // Briefing pré-sessão gerado por IA a partir das notas das sessões anteriores do paciente.
 // O psicólogo pode editar o texto e marcá-lo como revisto. Só DADOS FICTÍCIOS até haver DPIA.
@@ -9,8 +10,13 @@ export function BriefingConsulta({ consultaId }) {
   const [texto, setTexto] = useState('')
   const [aTrabalhar, setATrabalhar] = useState(null) // 'gerar' | 'guardar' | null
   const [erro, setErro] = useState(null)
+  const [automatico, setAutomatico] = useState(() => briefingAGerar(consultaId)) // o sino está a gerá-lo
 
   const caminho = `/api/consultas/${consultaId}/briefing`
+  const atual = useRef(briefing)
+  useEffect(() => {
+    atual.current = briefing
+  }, [briefing])
 
   useEffect(() => {
     let ativo = true
@@ -25,6 +31,25 @@ export function BriefingConsulta({ consultaId }) {
       ativo = false
     }
   }, [caminho])
+
+  // O sino (15 min antes) está a gerar o briefing desta consulta: mostra "A gerar…" e, no fim, o texto.
+  useEffect(() => {
+    function aoGerar(e) {
+      if (e.detail?.consultaId !== consultaId) return
+      setAutomatico(e.detail.emCurso)
+      if (e.detail.emCurso || !e.detail.gerado || atual.current) return
+      api(caminho)
+        .then((b) => {
+          if (b && !atual.current) {
+            setBriefing(b)
+            setTexto(b.texto)
+          }
+        })
+        .catch(() => {})
+    }
+    window.addEventListener(BRIEFING_AUTOMATICO, aoGerar)
+    return () => window.removeEventListener(BRIEFING_AUTOMATICO, aoGerar)
+  }, [caminho, consultaId])
 
   async function pedir(acao, opcoes) {
     setErro(null)
@@ -55,7 +80,8 @@ export function BriefingConsulta({ consultaId }) {
   }
 
   const editado = briefing && texto !== briefing.texto
-  const ocupado = aTrabalhar !== null
+  const ocupado = aTrabalhar !== null || automatico
+  const aGerar = aTrabalhar === 'gerar' || automatico
 
   return (
     <section className="briefing" aria-label="Briefing pré-sessão">
@@ -70,7 +96,14 @@ export function BriefingConsulta({ consultaId }) {
 
       {briefing === undefined && !erro && <p className="hint">A carregar…</p>}
 
-      {briefing === null && (
+      {automatico && (
+        <p className="briefing-a-gerar" role="status">
+          <span className="spinner" aria-hidden="true" />
+          A consulta é daqui a poucos minutos: a IA está a gerar o briefing automaticamente. Pode demorar até 30 s.
+        </p>
+      )}
+
+      {briefing === null && !automatico && (
         <p className="hint">
           Resumo das notas das últimas sessões deste paciente, feito por IA. Só entram as sessões anteriores
           marcadas como <strong>Realizada</strong> e com notas. Reveja sempre antes de usar.
@@ -121,7 +154,7 @@ export function BriefingConsulta({ consultaId }) {
             disabled={ocupado}
             onClick={gerar}
           >
-            {aTrabalhar === 'gerar' ? 'A gerar… (pode demorar 30 s)' : briefing ? 'Gerar de novo' : 'Gerar briefing'}
+            {aGerar ? 'A gerar briefing… (pode demorar 30 s)' : briefing ? 'Gerar de novo' : 'Gerar briefing'}
           </button>
         </div>
       )}

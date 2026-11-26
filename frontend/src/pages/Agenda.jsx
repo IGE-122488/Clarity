@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { ConsultaPainel } from '../components/ConsultaPainel'
 import { api } from '../lib/api'
 import {
@@ -11,6 +11,7 @@ import {
   minutosDesdeMeiaNoite,
   somarDias,
 } from '../lib/datas'
+import { CONSULTAS_ALTERADAS, avisar } from '../lib/eventos'
 import { useSession } from '../lib/useSession'
 
 // Vista semanal da agenda. Só DADOS FICTÍCIOS até haver DPIA aprovada.
@@ -18,6 +19,14 @@ const PRIMEIRA_HORA = 7
 const ULTIMA_HORA = 22 // a grelha acaba às 22:00
 const PX_POR_HORA = 56
 const HORAS = Array.from({ length: ULTIMA_HORA - PRIMEIRA_HORA }, (_, i) => PRIMEIRA_HORA + i)
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// ?dia=2026-12-01 (dia local) ou ?dia=<data ISO com hora>, vindos dos links do sino.
+function lerDia(valor) {
+  if (!valor) return null
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(valor) ? new Date(`${valor}T12:00`) : new Date(valor)
+  return Number.isNaN(d.getTime()) ? null : d
+}
 
 function posicao(consulta) {
   const inicio = new Date(consulta.inicio)
@@ -70,6 +79,17 @@ export function Agenda() {
   const [recarregar, setRecarregar] = useState(0)
   const [painel, setPainel] = useState(null) // { consultaId } ou { inicioSugerido }
   const [mostrarCanceladas, setMostrarCanceladas] = useState(false)
+  const [parametros, setParametros] = useSearchParams()
+
+  // Links do sino: /agenda?consulta=<id>&dia=<data> abre essa semana e essa consulta.
+  useEffect(() => {
+    const dia = lerDia(parametros.get('dia'))
+    const consulta = parametros.get('consulta')
+    if (!dia && !consulta) return
+    if (dia) setSegunda(inicioDaSemana(dia))
+    if (consulta && UUID.test(consulta)) setPainel({ consultaId: consulta })
+    setParametros({}, { replace: true })
+  }, [parametros, setParametros])
 
   const dias = useMemo(() => Array.from({ length: 7 }, (_, i) => somarDias(segunda, i)), [segunda])
   const hoje = new Date()
@@ -112,6 +132,7 @@ export function Agenda() {
   function guardado() {
     setPainel(null)
     setRecarregar((n) => n + 1)
+    avisar(CONSULTAS_ALTERADAS) // o sino atualiza-se logo
   }
 
   return (

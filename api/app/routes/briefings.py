@@ -2,7 +2,9 @@
 
 - GET   /api/consultas/{id}/briefing → o briefing guardado, ou null se ainda não foi gerado.
 - POST  /api/consultas/{id}/briefing → gera (ou gera de novo) a partir das notas das sessões
-  anteriores do mesmo paciente. Fica sempre "por rever".
+  anteriores do mesmo paciente. Fica sempre "por rever". Com `?so_se_nao_existir=true` (usado pelo
+  sino, 15 min antes da consulta) devolve o briefing que já existir sem chamar a IA, para nunca
+  apagar o que o psicólogo editou.
 - PATCH /api/consultas/{id}/briefing → o psicólogo edita o texto e/ou marca como revisto.
 
 Quem garante que cada psicólogo só vê os seus briefings é o Supabase (RLS): uma consulta de
@@ -15,7 +17,7 @@ from typing import Annotated
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from .. import supabase_db as db
 from ..briefing import INSTRUCOES, montar_entrada, sessoes_anteriores
@@ -59,10 +61,17 @@ async def gerar(
     client: ClientDep,
     token: Token,
     gerador: GeradorDep,
+    so_se_nao_existir: Annotated[
+        bool, Query(description="Se já houver briefing, devolve-o sem gerar de novo")
+    ] = False,
 ) -> dict:
     consulta = await _consulta(client, settings, token, consulta_id)
     if consulta["estado"] == "cancelada":
         raise HTTPException(status.HTTP_409_CONFLICT, "Esta consulta está cancelada.")
+    if so_se_nao_existir:
+        existente = await db.obter_briefing(client, settings, token, consulta_id)
+        if existente is not None:
+            return existente
 
     inicio = datetime.fromisoformat(consulta["inicio"])
     anteriores = await db.sessoes_realizadas_antes(
@@ -85,10 +94,20 @@ async def gerar(
         "sessoes_usadas": usadas,
     }
     existente = await db.obter_briefing(client, settings, token, consulta_id)
+    if existente is not None and so_se_nao_existir:
+        # Foi criado enquanto a IA respondia (outro separador): não se substitui.
+        return existente
     if existente is None:
-        return await db.criar_briefing(
-            client, settings, token, {**dados, "consulta_id": str(consulta_id)}
-        )
+        try:
+            return await db.criar_briefing(
+                client, settings, token, {**dados, "consulta_id": str(consulta_id)}
+            )
+        except db.Conflito:
+            # Outro separador (ou o sino) criou-o entretanto: fica o que já lá está.
+            criado = await db.obter_briefing(client, settings, token, consulta_id)
+            if criado is None:
+                raise
+            return criado
 
     novo = {**dados, "revisto": False, "gerado_em": db.iso_utc(datetime.now(UTC))}
     briefing = await db.atualizar_briefing(client, settings, token, UUID(existente["id"]), novo)
