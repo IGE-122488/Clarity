@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { api } from '../lib/api'
 import { useSession } from '../lib/useSession'
 
@@ -21,6 +21,7 @@ export function Pacientes() {
   const [nome, setNome] = useState('')
   const [dataNascimento, setDataNascimento] = useState('')
   const [aGuardar, setAGuardar] = useState(false)
+  const aviso = useLocation().state?.aviso // ex.: depois de apagar um paciente (passo 7)
 
   useEffect(() => {
     if (!session) return
@@ -79,6 +80,11 @@ export function Pacientes() {
   return (
     <section>
       <h1>Pacientes</h1>
+      {aviso && (
+        <p className="ok" role="status">
+          {aviso}
+        </p>
+      )}
       <p className="hint">Apenas dados fictícios. Nunca introduzir dados de pacientes reais.</p>
 
       <form onSubmit={criar} className="form form-inline">

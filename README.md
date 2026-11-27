@@ -49,6 +49,8 @@ Testar o OCR (passo 5) com uma fotografia de notas fictícias: `python scripts/t
 
 Avisos (passo 6): o sino no topo da app avisa 15 min antes de cada consulta (e gera o briefing, se ainda não houver), mostra as consultas de amanhã e as consultas passadas ainda como Agendada. Funciona só com a app aberta num separador: não há emails nem tarefas agendadas no servidor.
 
+Dados do paciente (passo 7, RGPD): na ficha do paciente, exportar tudo (ficha, consultas, notas e briefings) em texto ou JSON, e apagar definitivamente o paciente com todos os dados, depois de escrever o nome dele para confirmar. Na base de dados, apagar o paciente apaga em cascata as consultas e os briefings (migração `20261127160000_apagar_paciente.sql`).
+
 > Se o PowerShell bloquear o `activate`, corram uma vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` e tentem de novo.
 
 **Terminal 2 — Frontend (React):**

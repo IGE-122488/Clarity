@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { DadosDoPaciente } from '../components/DadosDoPaciente'
 import { api } from '../lib/api'
 import { formatarDataLonga, formatarHora } from '../lib/datas'
 import { useSession } from '../lib/useSession'
@@ -159,6 +160,8 @@ export function Paciente() {
           ))}
         </ul>
       )}
+
+      <DadosDoPaciente paciente={paciente} numConsultas={consultas.length} />
     </section>
   )
 }
