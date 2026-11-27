@@ -1,6 +1,6 @@
 # Clarity — web app
 
-Web app do projeto Clarity (CVPBT Grupo 13 / GPTSI Grupo 17, ISCTE): importa as notas do psicólogo, propõe resumos de sessão que o psicólogo valida e prepara um briefing antes de cada consulta.
+Web app do projeto Clarity (CVPBT Grupo 13 / GPTSI Grupo 17, ISCTE): importa as notas do psicólogo e prepara antes de cada consulta um briefing que resume as sessões anteriores (onde ficaram, como evoluíram os temas e o que ficou combinado), que o psicólogo revê.
 
 > **Regra do projeto:** até existir a avaliação de impacto (RGPD), **só se usam dados fictícios**. Nenhuma nota real de pacientes entra nesta app, nem em desenvolvimento nem em pré-visualizações.
 
