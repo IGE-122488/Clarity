@@ -160,6 +160,75 @@ async def atualizar_paciente(
     )
 
 
+async def apagar_paciente(
+    client: httpx.AsyncClient, settings: Settings, token: str, paciente_id: UUID
+) -> bool:
+    """Apaga o paciente e, em cascata na base de dados, as consultas, notas e briefings dele.
+
+    Devolve False se o paciente não existir ou for de outro psicólogo (o RLS esconde-o)."""
+    linhas = await _pedido(
+        client,
+        "DELETE",
+        _url(settings, "pacientes"),
+        params={"select": "id", "id": f"eq.{paciente_id}"},
+        headers=_cabecalhos(settings, token, Prefer="return=representation"),
+    )
+    return bool(linhas)
+
+
+# Exportação (RGPD)
+
+PAGINA = 1000  # o Supabase devolve no máximo 1000 linhas por pedido
+LOTE_IDS = 100  # ids por pedido "in.(...)", para o URL não ficar demasiado comprido
+
+
+async def _listar_tudo(
+    client: httpx.AsyncClient, settings: Settings, token: str, tabela: str, params: dict
+) -> list[dict]:
+    """Todas as linhas, página a página (params tem de ter um "order" sem empates)."""
+    linhas: list[dict] = []
+    while True:
+        pagina = await _listar(
+            client,
+            settings,
+            token,
+            tabela,
+            {**params, "limit": str(PAGINA), "offset": str(len(linhas))},
+        )
+        linhas += pagina
+        if len(pagina) < PAGINA:
+            return linhas
+
+
+async def dados_do_paciente(
+    client: httpx.AsyncClient, settings: Settings, token: str, paciente_id: UUID
+) -> tuple[list[dict], list[dict]]:
+    """Todas as consultas do paciente (mais antigas primeiro) e todos os briefings delas."""
+    consultas = await _listar_tudo(
+        client,
+        settings,
+        token,
+        "consultas",
+        {
+            "select": COLUNAS_CONSULTA,
+            "paciente_id": f"eq.{paciente_id}",
+            "order": "inicio.asc,id.asc",
+        },
+    )
+    ids = [c["id"] for c in consultas]
+    briefings: list[dict] = []
+    for i in range(0, len(ids), LOTE_IDS):
+        lote = ",".join(ids[i : i + LOTE_IDS])
+        briefings += await _listar(
+            client,
+            settings,
+            token,
+            "briefings",
+            {"select": COLUNAS_BRIEFING, "consulta_id": f"in.({lote})"},
+        )
+    return consultas, briefings
+
+
 # Consultas (agenda)
 
 

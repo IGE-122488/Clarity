@@ -740,3 +740,55 @@ textarea:focus-visible {
     animation-duration: 3s;
   }
 }
+
+/* Dados do paciente: exportar e apagar (passo 7, RGPD) */
+.dados-paciente {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.dados-bloco {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.dados-bloco h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.dados-bloco p {
+  margin: 0 0 0.75rem;
+}
+
+.dados-bloco form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.dados-bloco input {
+  max-width: 24rem;
+}
+
+.dados-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dados-perigo {
+  border-color: #e8c4c4;
+}
+
+.botao-perigo {
+  background: #9b1c1c;
+  color: #fff;
+}
+
+.botao-perigo:disabled {
+  opacity: 0.45;
+}

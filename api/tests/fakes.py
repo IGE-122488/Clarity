@@ -4,6 +4,8 @@
 incluindo o efeito das regras RLS (cada token só vê as linhas do seu psicólogo), das permissões
 por coluna e das chaves estrangeiras que obrigam a consulta a ser de um paciente do mesmo
 psicólogo e o briefing a ser de uma consulta do mesmo psicólogo (e só um por consulta).
+Apagar um paciente apaga em cascata as consultas e os briefings dele (passo 7); consultas e
+briefings não se apagam diretamente. Como no Supabase, cada GET devolve no máximo 1000 linhas.
 As regras verdadeiras são testadas na base de dados com supabase/tests/*.sql.
 """
 
@@ -26,6 +28,7 @@ TABELAS = {
         "insert": {"nome", "data_nascimento"},
         "update": {"nome", "data_nascimento", "ativo"},
         "omissao": {"data_nascimento": None, "ativo": True},
+        "delete": True,
     },
     "consultas": {
         "insert": {"paciente_id", "inicio", "fim", "estado", "notas"},
@@ -39,7 +42,8 @@ TABELAS = {
     },
 }
 
-PARAMETROS_ESPECIAIS = {"select", "order", "limit"}
+PARAMETROS_ESPECIAIS = {"select", "order", "limit", "offset"}
+MAX_LINHAS = 1000  # "max rows" da Data API do Supabase
 
 
 def supabase_falso(request: httpx.Request) -> httpx.Response:
@@ -67,6 +71,8 @@ def _cumpre(linha: dict, coluna: str, condicao: str) -> bool:
     atual = linha.get(coluna)
     if operador == "is":
         return atual is {"true": True, "false": False, "null": None}[valor]
+    if operador == "in":
+        return atual is not None and str(atual) in valor.strip("()").split(",")
     if atual is None:
         return False
     atual = str(atual)
@@ -105,13 +111,14 @@ class SupabaseFalso:
             return httpx.Response(401, json={"code": "PGRST301", "message": "JWT invalid"})
 
         if request.method == "GET":
-            return httpx.Response(
-                200, json=self._ver(request, self._filtrar(request, tabela, dono))
-            )
+            linhas = self._filtrar(request, tabela, dono)[:MAX_LINHAS]
+            return httpx.Response(200, json=self._ver(request, linhas))
         if request.method == "POST":
             return self._criar(request, tabela, dono)
         if request.method == "PATCH":
             return self._alterar(request, tabela, dono)
+        if request.method == "DELETE":
+            return self._apagar(request, tabela, dono)
         return httpx.Response(405)
 
     def _filtrar(self, request: httpx.Request, tabela: str, dono: str) -> list[dict]:
@@ -121,8 +128,14 @@ class SupabaseFalso:
             if coluna not in PARAMETROS_ESPECIAIS:
                 linhas = [linha for linha in linhas if _cumpre(linha, coluna, condicao)]
         if "order" in params:
-            coluna, sentido = params["order"].split(".")
-            linhas = sorted(linhas, key=lambda linha: str(linha[coluna]), reverse=sentido == "desc")
+            # Várias colunas ("inicio.asc,id.asc"): ordena da última para a primeira (sort estável).
+            for criterio in reversed(params["order"].split(",")):
+                coluna, sentido = criterio.split(".")
+                linhas = sorted(
+                    linhas, key=lambda linha: str(linha[coluna]), reverse=sentido == "desc"
+                )
+        if "offset" in params:
+            linhas = linhas[int(params["offset"]) :]
         if "limit" in params:
             linhas = linhas[: int(params["limit"])]
         return linhas
@@ -205,3 +218,23 @@ class SupabaseFalso:
         for linha in linhas:
             linha.update(dados, atualizado_em=_agora())
         return httpx.Response(200, json=self._ver(request, linhas))
+
+    def _apagar(self, request: httpx.Request, tabela: str, dono: str) -> httpx.Response:
+        if not TABELAS[tabela].get("delete"):
+            return httpx.Response(403, json={"code": "42501", "message": "permission denied"})
+        apagadas = self._filtrar(request, tabela, dono)
+        ids = {linha["id"] for linha in apagadas}
+        self.tabelas[tabela] = [linha for linha in self.tabelas[tabela] if linha["id"] not in ids]
+        # on delete cascade: consultas do paciente e, a seguir, os briefings dessas consultas
+        consultas = {
+            c["id"]
+            for c in self.tabelas["consultas"]
+            if c["paciente_id"] in ids and c["psicologo_id"] == dono
+        }
+        self.tabelas["consultas"] = [
+            c for c in self.tabelas["consultas"] if c["id"] not in consultas
+        ]
+        self.tabelas["briefings"] = [
+            b for b in self.tabelas["briefings"] if b["consulta_id"] not in consultas
+        ]
+        return httpx.Response(200, json=self._ver(request, apagadas))

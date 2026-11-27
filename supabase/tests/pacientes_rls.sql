@@ -78,15 +78,17 @@ begin
   end;
 end $$;
 
--- 5. Ninguém apaga pacientes pela app (arquiva-se com ativo = false)
+-- 5. Apagar só apaga os pacientes do próprio psicólogo (passo 7; o teste completo, com as
+--    consultas e os briefings, está em apagar_paciente_rls.sql)
 do $$
+declare
+  antes int;
 begin
-  begin
-    delete from public.pacientes;
-    raise exception 'FALHOU: foi possível apagar pacientes';
-  exception when insufficient_privilege then
-    null; -- esperado
-  end;
+  select count(*) into antes from public.pacientes;
+  delete from public.pacientes where false; -- tem permissão, mesmo sem apagar nada
+  if (select count(*) from public.pacientes) <> antes then
+    raise exception 'FALHOU: o DELETE mexeu em pacientes';
+  end if;
 end $$;
 
 -- 6. B consegue alterar e arquivar o seu paciente

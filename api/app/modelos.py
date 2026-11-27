@@ -37,6 +37,14 @@ class PacienteNovo(BaseModel):
         return _validar_data_nascimento(valor)
 
 
+class ConfirmacaoApagar(BaseModel):
+    """Para apagar um paciente é preciso escrever o nome dele (vai no corpo, nunca no URL)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    confirmacao: Annotated[str, StringConstraints(min_length=1, max_length=200)]
+
+
 class PacienteAlteracao(BaseModel):
     """Só os campos enviados são alterados. `ativo: false` arquiva o paciente."""
 
