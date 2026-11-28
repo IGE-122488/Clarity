@@ -5,6 +5,9 @@ import '@fontsource-variable/outfit'
 import '@fontsource-variable/atkinson-hyperlegible-next'
 import './index.css'
 import App from './App'
+import { iniciarTema } from './lib/tema'
+
+iniciarTema() // antes de desenhar, para não aparecer branco e depois escuro
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
