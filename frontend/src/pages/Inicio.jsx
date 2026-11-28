@@ -24,7 +24,8 @@ function quantoFalta(inicio, agora) {
   if (minutos < 60) return `daqui a ${minutos} min`
   const horas = Math.floor(minutos / 60)
   const resto = minutos % 60
-  if (horas < 24) return `daqui a ${horas} h${resto ? ` ${resto} min` : ''}`
+  const minutosAMais = resto ? ` ${resto} min` : ''
+  if (horas < 24) return `daqui a ${horas} h${minutosAMais}`
   const dias = Math.round((meiaNoite(inicio) - meiaNoite(agora)) / 86400000)
   return dias === 1 ? 'amanhã' : `daqui a ${dias} dias`
 }
@@ -53,6 +54,19 @@ function SemSessao() {
   )
 }
 
+function EstadoBriefing({ briefing, resumo }) {
+  if (briefing === undefined) return <p>A verificar o briefing…</p>
+  if (!briefing) {
+    return <p>Ainda sem briefing. É gerado 15 min antes da consulta, ou quando o pedir ao abrir a consulta.</p>
+  }
+  return (
+    <>
+      <p className="proxima-briefing-estado">{briefing.revisto ? 'Briefing revisto' : 'Briefing pronto, por rever'}</p>
+      {resumo && <p className="proxima-resumo">{resumo}</p>}
+    </>
+  )
+}
+
 function ProximaConsulta({ consulta, nome, agora }) {
   const [briefing, setBriefing] = useState(undefined) // undefined = a carregar; null = ainda não há
 
@@ -63,7 +77,9 @@ function ProximaConsulta({ consulta, nome, agora }) {
       .catch(() => ativo && setBriefing(null))
     const aoGerar = (e) => {
       if (e.detail?.consultaId === consulta.id && !e.detail.emCurso && e.detail.gerado) {
-        api(`/api/consultas/${consulta.id}/briefing`).then((b) => ativo && setBriefing(b))
+        api(`/api/consultas/${consulta.id}/briefing`)
+          .then((b) => ativo && setBriefing(b))
+          .catch(() => {}) // fica o estado anterior; o painel da consulta mostra o erro, se houver
       }
     }
     window.addEventListener(BRIEFING_AUTOMATICO, aoGerar)
@@ -96,18 +112,7 @@ function ProximaConsulta({ consulta, nome, agora }) {
       </p>
 
       <div className="proxima-briefing">
-        {briefing === undefined ? (
-          <p>A verificar o briefing…</p>
-        ) : briefing ? (
-          <>
-            <p className="proxima-briefing-estado">
-              {briefing.revisto ? 'Briefing revisto' : 'Briefing pronto, por rever'}
-            </p>
-            {resumo && <p className="proxima-resumo">{resumo}</p>}
-          </>
-        ) : (
-          <p>Ainda sem briefing. É gerado 15 min antes da consulta, ou quando o pedir ao abrir a consulta.</p>
-        )}
+        <EstadoBriefing briefing={briefing} resumo={resumo} />
       </div>
 
       <div className="proxima-acoes">
@@ -194,80 +199,78 @@ function Hoje() {
         </p>
       )}
 
-      {!consultas && !erro ? (
-        <p>A carregar…</p>
-      ) : (
-        consultas && (
-          <div className="hoje-grelha">
-            {proxima ? (
-              <ProximaConsulta key={proxima.id} consulta={proxima} nome={nome(proxima.paciente_id)} agora={agora} />
-            ) : (
-              <article className="proxima proxima-vazia">
-                <h2>Próxima consulta</h2>
-                <p className="proxima-nome">Sem consultas marcadas nos próximos 7 dias.</p>
-                <div className="proxima-acoes">
-                  <Link className="botao botao-claro" to="/agenda?nova=1">
-                    Marcar consulta
-                  </Link>
-                </div>
-              </article>
-            )}
+      {!consultas && !erro && <p>A carregar…</p>}
 
-            <section className="dia" aria-labelledby="dia-titulo">
-              <h2 id="dia-titulo">O dia</h2>
-              {doDia.length === 0 ? (
-                <p className="hint">Sem consultas hoje.</p>
-              ) : (
-                <ol className="dia-lista">
-                  {doDia.map((c, i) => (
-                    <li key={c.id} className={new Date(c.fim) <= agora ? 'dia-passada' : undefined}>
-                      {i === indiceAgora && (
-                        <span className="dia-agora" aria-label={`Agora, ${formatarHora(agora)}`}>
-                          Agora, {formatarHora(agora)}
+      {consultas && (
+        <div className="hoje-grelha">
+          {proxima ? (
+            <ProximaConsulta key={proxima.id} consulta={proxima} nome={nome(proxima.paciente_id)} agora={agora} />
+          ) : (
+            <article className="proxima proxima-vazia">
+              <h2>Próxima consulta</h2>
+              <p className="proxima-nome">Sem consultas marcadas nos próximos 7 dias.</p>
+              <div className="proxima-acoes">
+                <Link className="botao botao-claro" to="/agenda?nova=1">
+                  Marcar consulta
+                </Link>
+              </div>
+            </article>
+          )}
+
+          <section className="dia" aria-labelledby="dia-titulo">
+            <h2 id="dia-titulo">O dia</h2>
+            {doDia.length === 0 ? (
+              <p className="hint">Sem consultas hoje.</p>
+            ) : (
+              <ol className="dia-lista">
+                {doDia.map((c, i) => (
+                  <li key={c.id} className={new Date(c.fim) <= agora ? 'dia-passada' : undefined}>
+                    {i === indiceAgora && (
+                      <span className="dia-agora" aria-label={`Agora, ${formatarHora(agora)}`}>
+                        Agora, {formatarHora(agora)}
+                      </span>
+                    )}
+                    <Link to={linkDaConsulta(c)} className="dia-consulta">
+                      <span className="dia-hora">
+                        {formatarHora(new Date(c.inicio))}–{formatarHora(new Date(c.fim))}
+                      </span>
+                      <span className="dia-nome">{nome(c.paciente_id)}</span>
+                      {c.estado !== 'agendada' && (
+                        <span className={`etiqueta estado-${c.estado}`}>
+                          {c.estado_automatico ? 'Por confirmar' : ESTADO_TEXTO[c.estado]}
                         </span>
                       )}
-                      <Link to={linkDaConsulta(c)} className="dia-consulta">
-                        <span className="dia-hora">
-                          {formatarHora(new Date(c.inicio))}–{formatarHora(new Date(c.fim))}
-                        </span>
-                        <span className="dia-nome">{nome(c.paciente_id)}</span>
-                        {c.estado !== 'agendada' && (
-                          <span className={`etiqueta estado-${c.estado}`}>
-                            {c.estado_automatico ? 'Por confirmar' : ESTADO_TEXTO[c.estado]}
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  ))}
-                  {indiceAgora === -1 && (
-                    <li>
-                      <span className="dia-agora">Agora, {formatarHora(agora)}</span>
-                    </li>
-                  )}
-                </ol>
-              )}
-            </section>
-
-            {porConfirmar.length > 0 && (
-              <section className="confirmar" aria-labelledby="confirmar-titulo">
-                <h2 id="confirmar-titulo">Por confirmar</h2>
-                <p className="hint">
-                  Passaram sozinhas a Realizada no fim da hora. Confirme no sino ou abra a consulta e escolha Faltou ou
-                  Cancelada se não se realizaram.
-                </p>
-                <ul className="confirmar-lista">
-                  {porConfirmar.map((c) => (
-                    <li key={c.id}>
-                      <Link to={linkDaConsulta(c)}>
-                        {nome(c.paciente_id)}, {formatarDia(new Date(c.inicio))} às {formatarHora(new Date(c.inicio))}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                    </Link>
+                  </li>
+                ))}
+                {indiceAgora === -1 && (
+                  <li>
+                    <span className="dia-agora">Agora, {formatarHora(agora)}</span>
+                  </li>
+                )}
+              </ol>
             )}
-          </div>
-        )
+          </section>
+
+          {porConfirmar.length > 0 && (
+            <section className="confirmar" aria-labelledby="confirmar-titulo">
+              <h2 id="confirmar-titulo">Por confirmar</h2>
+              <p className="hint">
+                Passaram sozinhas a Realizada no fim da hora. Confirme no sino ou abra a consulta e escolha Faltou ou
+                Cancelada se não se realizaram.
+              </p>
+              <ul className="confirmar-lista">
+                {porConfirmar.map((c) => (
+                  <li key={c.id}>
+                    <Link to={linkDaConsulta(c)}>
+                      {nome(c.paciente_id)}, {formatarDia(new Date(c.inicio))} às {formatarHora(new Date(c.inicio))}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
       )}
     </section>
   )

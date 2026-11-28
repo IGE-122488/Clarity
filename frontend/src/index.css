@@ -1002,7 +1002,7 @@ a.botao:focus-visible {
   margin: 1.25rem 0 1.5rem;
   padding: 0.85rem 1rem;
   border-radius: 10px;
-  background: rgb(255 255 255 / 0.08);
+  background: #304a4d; /* branco a 8% sobre --ink, em cor sólida para o contraste poder ser verificado */
   color: #e4efeb;
   max-width: 60ch;
 }
@@ -1109,7 +1109,7 @@ a.botao.botao-contorno {
   margin: 0.25rem 0;
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--teal);
+  color: #3f7468; /* --teal escurecido: texto pequeno precisa de contraste 4.5:1 sobre branco */
 }
 
 .dia-agora::after {
