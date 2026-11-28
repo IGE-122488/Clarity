@@ -3,6 +3,7 @@ import { Layout } from './components/Layout'
 import { Inicio } from './pages/Inicio'
 import { Estado } from './pages/Estado'
 import { Entrar } from './pages/Entrar'
+import { NovaPalavraPasse } from './pages/NovaPalavraPasse'
 import { Pacientes } from './pages/Pacientes'
 import { Paciente } from './pages/Paciente'
 import { Agenda } from './pages/Agenda'
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
       // Página técnica para a equipa (API, ambiente, versão): não existe na versão online.
       ...(appEnv === 'production' ? [] : [{ path: '/estado', element: <Estado /> }]),
       { path: '/entrar', element: <Entrar /> },
+      { path: '/nova-palavra-passe', element: <NovaPalavraPasse /> },
       { path: '*', element: <NaoEncontrado /> },
     ],
   },
