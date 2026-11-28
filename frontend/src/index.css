@@ -1769,6 +1769,54 @@ a.botao.botao-contorno {
   width: 100%;
 }
 
+/* Entrar e nova palavra-passe (passo 14, requisito 022) */
+.entrada {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 2rem 0;
+}
+
+.entrada-cartao {
+  display: grid;
+  gap: 1rem;
+  width: min(100%, 26rem);
+  padding: 2rem;
+  background: var(--superficie);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.entrada-cartao h1 {
+  margin: 0.25rem 0 0;
+  font-size: 1.7rem;
+}
+
+.entrada-texto {
+  margin: 0;
+  color: var(--muted);
+}
+
+.entrada-cartao .botao,
+.entrada-cartao .form button {
+  justify-self: stretch;
+  text-align: center;
+}
+
+.entrada-ligacao {
+  justify-self: start;
+  font-size: 0.95rem;
+}
+
+.entrada-ligacao:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.entrada-aviso {
+  margin: 0;
+}
+
 /* Modo escuro (passo 13): as mesmas regras, outras cores. Escolhido no botão da lua; sem escolha, segue o sistema. */
 :root[data-tema='escuro'] {
   color-scheme: dark;
@@ -1966,6 +2014,14 @@ a.botao.botao-contorno {
 
   .agenda-dia.escolhido {
     display: block;
+  }
+
+  .entrada {
+    padding: 0.5rem 0;
+  }
+
+  .entrada-cartao {
+    padding: 1.5rem 1.25rem;
   }
 
   /* Pacientes e ficha */
