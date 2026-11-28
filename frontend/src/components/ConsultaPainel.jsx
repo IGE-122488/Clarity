@@ -23,6 +23,7 @@ export function ConsultaPainel({ consultaId, inicioSugerido, pacientes, nomeDoPa
   const [hora, setHora] = useState(paraInputHora(inicioSugerido ?? new Date()))
   const [duracao, setDuracao] = useState(50)
   const [estado, setEstado] = useState('agendada')
+  const [automatico, setAutomatico] = useState(false) // passou sozinha a "realizada"; falta confirmar
   const [notas, setNotas] = useState('')
   const [erro, setErro] = useState(null)
   const [sobrepostas, setSobrepostas] = useState(null)
@@ -41,6 +42,7 @@ export function ConsultaPainel({ consultaId, inicioSugerido, pacientes, nomeDoPa
         setDuracao(Math.round((fim - inicio) / 60000))
         setOriginal(`${paraInputData(inicio)} ${paraInputHora(inicio)} ${Math.round((fim - inicio) / 60000)}`)
         setEstado(c.estado)
+        setAutomatico(Boolean(c.estado_automatico))
         setNotas(c.notas ?? '')
         setCarregada(true)
       })
@@ -161,6 +163,12 @@ export function ConsultaPainel({ consultaId, inicioSugerido, pacientes, nomeDoPa
                   </option>
                 ))}
               </select>
+              {automatico && estado === 'realizada' && (
+                <span className="hint aviso-confirmar">
+                  Passou sozinha a Realizada no fim da hora. Ao guardar, fica confirmada; se não se realizou, escolha
+                  Faltou ou Cancelada.
+                </span>
+              )}
             </label>
           )}
 

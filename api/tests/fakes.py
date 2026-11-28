@@ -32,8 +32,8 @@ TABELAS = {
     },
     "consultas": {
         "insert": {"paciente_id", "inicio", "fim", "estado", "notas"},
-        "update": {"inicio", "fim", "estado", "notas"},
-        "omissao": {"estado": "agendada", "notas": None},
+        "update": {"inicio", "fim", "estado", "notas", "estado_automatico"},
+        "omissao": {"estado": "agendada", "notas": None, "estado_automatico": False},
     },
     "briefings": {
         "insert": {"consulta_id", "texto", "modelo", "sessoes_usadas"},
@@ -182,6 +182,8 @@ class SupabaseFalso:
         if paciente is None:  # chave estrangeira (paciente_id, psicologo_id)
             return httpx.Response(409, json={"code": "23503", "message": "foreign key violation"})
         if not linha["fim"] > linha["inicio"]:
+            return httpx.Response(400, json={"code": "23514", "message": "check violation"})
+        if linha.get("estado_automatico") and linha["estado"] != "realizada":
             return httpx.Response(400, json={"code": "23514", "message": "check violation"})
         return None
 

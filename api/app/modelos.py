@@ -142,6 +142,8 @@ class ConsultaAgenda(BaseModel):
     inicio: datetime
     fim: datetime
     estado: EstadoConsulta
+    # true = passou sozinha a "realizada" no fim da hora e ainda falta o psicólogo confirmar
+    estado_automatico: bool = False
     criado_em: datetime
     atualizado_em: datetime
 

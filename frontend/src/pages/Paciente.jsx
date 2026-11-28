@@ -116,12 +116,15 @@ export function Paciente() {
       <p className="hint">
         <Link to="/pacientes">‹ Pacientes</Link>
       </p>
-      <h1>{paciente.nome}</h1>
+      <h1>
+        {paciente.nome}
+        {!paciente.ativo && <span className="etiqueta etiqueta-arquivado">Arquivado</span>}
+      </h1>
       <p className="hint">
         {paciente.data_nascimento
           ? `Nascido(a) a ${paciente.data_nascimento.split('-').reverse().join('/')}`
-          : 'Sem data de nascimento'}
-        {!paciente.ativo && ' · Arquivado'} · Apenas dados fictícios.
+          : 'Sem data de nascimento'}{' '}
+        · Apenas dados fictícios.
       </p>
 
       <h2>Próximas consultas</h2>
@@ -161,7 +164,7 @@ export function Paciente() {
         </ul>
       )}
 
-      <DadosDoPaciente paciente={paciente} numConsultas={consultas.length} />
+      <DadosDoPaciente paciente={paciente} numConsultas={consultas.length} onAlterado={setPaciente} />
     </section>
   )
 }

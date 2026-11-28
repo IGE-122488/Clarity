@@ -16,7 +16,9 @@ from .config import Settings
 
 COLUNAS_PACIENTE = "id,nome,data_nascimento,ativo,criado_em,atualizado_em"
 # Na agenda não vêm as notas (minimização): só ao abrir a consulta ou o histórico do paciente.
-COLUNAS_CONSULTA_AGENDA = "id,paciente_id,inicio,fim,estado,criado_em,atualizado_em"
+COLUNAS_CONSULTA_AGENDA = (
+    "id,paciente_id,inicio,fim,estado,estado_automatico,criado_em,atualizado_em"
+)
 COLUNAS_CONSULTA = COLUNAS_CONSULTA_AGENDA + ",notas"
 COLUNAS_BRIEFING = (
     "id,consulta_id,texto,revisto,modelo,sessoes_usadas,gerado_em,criado_em,atualizado_em"
@@ -317,6 +319,26 @@ async def atualizar_consulta(
 ) -> dict | None:
     return await _atualizar(
         client, settings, token, "consultas", COLUNAS_CONSULTA, consulta_id, dados
+    )
+
+
+async def concluir_consultas_passadas(
+    client: httpx.AsyncClient, settings: Settings, token: str, agora: datetime
+) -> list[dict]:
+    """Passa a "realizada" (com estado_automatico) as consultas "agendada" que já terminaram.
+
+    Só mexe nas do próprio psicólogo (RLS). Devolve as consultas alteradas."""
+    return await _pedido(
+        client,
+        "PATCH",
+        _url(settings, "consultas"),
+        params={
+            "select": COLUNAS_CONSULTA_AGENDA,
+            "estado": "eq.agendada",
+            "fim": f"lte.{iso_utc(agora)}",
+        },
+        json={"estado": "realizada", "estado_automatico": True},
+        headers=_cabecalhos(settings, token, Prefer="return=representation"),
     )
 
 

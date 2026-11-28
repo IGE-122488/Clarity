@@ -10,7 +10,7 @@ import {
   minutosAte,
 } from '../lib/avisos'
 import { formatarDia, formatarHora, paraInputData } from '../lib/datas'
-import { CONSULTAS_ALTERADAS, fimDoBriefingAutomatico, inicioDoBriefingAutomatico } from '../lib/eventos'
+import { CONSULTAS_ALTERADAS, avisar, fimDoBriefingAutomatico, inicioDoBriefingAutomatico } from '../lib/eventos'
 
 // Sino de notificações (passo 6). Só funciona com a app aberta num separador: não há envio de
 // emails nem tarefas no servidor (isso exigiria a chave secreta do Supabase).
@@ -64,9 +64,16 @@ export function Sino({ session }) {
   const abertas = useRef([]) // notificações do computador ainda visíveis
 
   // Consultas dos últimos 30 dias até ao fim de amanhã, e os nomes dos pacientes.
+  // Antes, as consultas "agendada" que já terminaram passam a "realizada" (por confirmar).
   const carregar = useCallback(async () => {
     const { de, ate } = intervaloDosAvisos(new Date())
     try {
+      try {
+        const alteradas = await api('/api/consultas/concluir-passadas', { method: 'POST' })
+        if (alteradas.length > 0) avisar(CONSULTAS_ALTERADAS) // a agenda aberta atualiza-se
+      } catch {
+        // Sem a migração do passo 9, as consultas continuam "agendada" e o sino avisa como antes.
+      }
       const [lista, pacientes] = await Promise.all([
         api(`/api/consultas?de=${encodeURIComponent(de.toISOString())}&ate=${encodeURIComponent(ate.toISOString())}`),
         api('/api/pacientes?arquivados=true'),
@@ -103,7 +110,7 @@ export function Sino({ session }) {
     }
   }, [carregar])
 
-  const { proximas, amanha, passadas, chaves, inicioDeAmanha } = useMemo(
+  const { proximas, amanha, passadas, porConfirmar, chaves, inicioDeAmanha } = useMemo(
     () => calcularAvisos(consultas, agora),
     [consultas, agora],
   )
@@ -238,8 +245,29 @@ export function Sino({ session }) {
     }
   }
 
+  // Confirmar (estado "realizada") ou corrigir ("faltou", "cancelada") uma consulta por confirmar.
+  const [aConfirmar, setAConfirmar] = useState(null)
+  const [erroConfirmar, setErroConfirmar] = useState(null)
+  async function definirEstado(lista, estado) {
+    setAConfirmar(lista.length === 1 ? lista[0].id : 'todas')
+    setErroConfirmar(null)
+    try {
+      const novas = await Promise.all(
+        lista.map((c) => api(`/api/consultas/${c.id}`, { method: 'PATCH', body: JSON.stringify({ estado }) })),
+      )
+      const porId = Object.fromEntries(novas.map((c) => [c.id, c]))
+      setConsultas((atuais) => atuais.map((c) => (porId[c.id] ? { ...c, ...porId[c.id] } : c)))
+      avisar(CONSULTAS_ALTERADAS)
+    } catch (e) {
+      setErroConfirmar(e.message)
+    } finally {
+      setAConfirmar(null)
+    }
+  }
+
   const fechar = () => setAberto(false)
-  const semAvisos = proximas.length === 0 && amanha.length === 0 && passadas.length === 0
+  const semAvisos =
+    proximas.length === 0 && amanha.length === 0 && passadas.length === 0 && porConfirmar.length === 0
 
   return (
     <div className="sino" ref={raiz}>
@@ -298,6 +326,73 @@ export function Sino({ session }) {
                     </li>
                   )}
                 </ul>
+              </li>
+            )}
+
+            {porConfirmar.length > 0 && (
+              <li className="sino-item sino-confirmar">
+                <strong>
+                  {porConfirmar.length === 1
+                    ? '1 consulta passou a Realizada: confirme'
+                    : `${porConfirmar.length} consultas passaram a Realizada: confirme`}
+                </strong>
+                <span className="hint">
+                  Passaram sozinhas de Agendada a Realizada no fim da hora. Se não se realizaram, escolha Faltou ou
+                  Cancelada.
+                </span>
+                <ul className="sino-sublista">
+                  {porConfirmar.slice(0, MAX_LISTADAS).map((c) => (
+                    <li key={c.id} className="sino-confirmar-linha">
+                      <Link to={linkDaConsulta(c)} onClick={fechar}>
+                        {nome(c.paciente_id)} · {formatarDia(new Date(c.inicio))} às {formatarHora(new Date(c.inicio))}
+                      </Link>
+                      <span className="sino-botoes">
+                        <button
+                          type="button"
+                          className="botao-mini"
+                          disabled={aConfirmar !== null}
+                          onClick={() => definirEstado([c], 'realizada')}
+                        >
+                          {aConfirmar === c.id ? 'A guardar…' : 'Confirmar'}
+                        </button>
+                        <button
+                          type="button"
+                          className="botao-mini secundario"
+                          disabled={aConfirmar !== null}
+                          onClick={() => definirEstado([c], 'faltou')}
+                        >
+                          Faltou
+                        </button>
+                        <button
+                          type="button"
+                          className="botao-mini secundario"
+                          disabled={aConfirmar !== null}
+                          onClick={() => definirEstado([c], 'cancelada')}
+                        >
+                          Cancelada
+                        </button>
+                      </span>
+                    </li>
+                  ))}
+                  {porConfirmar.length > MAX_LISTADAS && (
+                    <li className="hint">e mais {porConfirmar.length - MAX_LISTADAS}</li>
+                  )}
+                </ul>
+                {porConfirmar.length > 1 && (
+                  <button
+                    type="button"
+                    className="link-button"
+                    disabled={aConfirmar !== null}
+                    onClick={() => definirEstado(porConfirmar, 'realizada')}
+                  >
+                    {aConfirmar === 'todas' ? 'A guardar…' : `Confirmar todas (${porConfirmar.length})`}
+                  </button>
+                )}
+                {erroConfirmar && (
+                  <p className="error" role="alert">
+                    {erroConfirmar}
+                  </p>
+                )}
               </li>
             )}
 
