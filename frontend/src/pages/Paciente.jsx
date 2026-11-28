@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { DadosDoPaciente } from '../components/DadosDoPaciente'
 import { api } from '../lib/api'
+import { linkDaConsulta } from '../lib/avisos'
 import { formatarDataLonga, formatarHora } from '../lib/datas'
+import { formatarDataISO, idade, iniciais } from '../lib/pacientes'
 import { useSession } from '../lib/useSession'
 
-// Ficha do paciente: dados e todas as consultas, com as notas de cada uma.
+// Ficha do paciente: resumo, próximas consultas e o histórico em linha do tempo, com as notas de cada sessão.
 // Só DADOS FICTÍCIOS até haver DPIA aprovada.
 const NOMES_ESTADO = {
   agendada: 'Agendada',
@@ -14,10 +16,17 @@ const NOMES_ESTADO = {
   cancelada: 'Cancelada',
 }
 
+function nomeDoEstado(consulta) {
+  return consulta.estado_automatico ? 'Por confirmar' : NOMES_ESTADO[consulta.estado]
+}
+
+// As notas aparecem como texto; só se editam depois de carregar em "Editar notas", para não se mudarem sem querer.
 function NotasConsulta({ consulta, onGuardado }) {
-  const [notas, setNotas] = useState(consulta.notas ?? '')
+  const original = consulta.notas ?? ''
+  const [aEditar, setAEditar] = useState(false)
+  const [notas, setNotas] = useState(original)
   const [estado, setEstado] = useState(null) // null | 'a guardar' | 'guardado' | mensagem de erro
-  const alterado = notas !== (consulta.notas ?? '')
+  const alterado = notas !== original
 
   async function guardar() {
     setEstado('a guardar')
@@ -28,15 +37,42 @@ function NotasConsulta({ consulta, onGuardado }) {
       })
       onGuardado(atualizada)
       setEstado('guardado')
+      setAEditar(false)
     } catch (e) {
       setEstado(e.message)
     }
   }
 
+  function cancelar() {
+    setNotas(original)
+    setEstado(null)
+    setAEditar(false)
+  }
+
+  const erro = estado && !['a guardar', 'guardado'].includes(estado)
+
+  if (!aEditar) {
+    return (
+      <div className="notas">
+        {original ? <p className="notas-texto">{original}</p> : <p className="hint">Sem notas.</p>}
+        <div className="notas-acoes">
+          <button type="button" className="botao-secundario botao-mini" onClick={() => setAEditar(true)}>
+            {original ? 'Editar notas' : 'Escrever notas'}
+          </button>
+          {estado === 'guardado' && (
+            <span className="ok" role="status">
+              Guardado.
+            </span>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="notas">
       <textarea
-        rows={4}
+        rows={6}
         maxLength={20000}
         value={notas}
         onChange={(e) => {
@@ -45,19 +81,106 @@ function NotasConsulta({ consulta, onGuardado }) {
         }}
         placeholder="Notas da sessão (apenas dados fictícios)"
         aria-label="Notas da sessão"
+        autoFocus
       />
       <div className="notas-acoes">
         <button type="button" disabled={!alterado || estado === 'a guardar'} onClick={guardar}>
           {estado === 'a guardar' ? 'A guardar…' : 'Guardar notas'}
         </button>
-        {estado === 'guardado' && <span className="ok">Guardado.</span>}
-        {estado && !['a guardar', 'guardado'].includes(estado) && (
+        <button type="button" className="botao-secundario" disabled={estado === 'a guardar'} onClick={cancelar}>
+          Cancelar
+        </button>
+        {erro && (
           <span className="error" role="alert">
             {estado}
           </span>
         )}
       </div>
     </div>
+  )
+}
+
+function Resumo({ consultas, agora }) {
+  const realizadas = consultas.filter((c) => c.estado === 'realizada' && new Date(c.inicio) <= agora)
+  const faltas = consultas.filter((c) => c.estado === 'faltou').length
+  const primeira = consultas.filter((c) => c.estado !== 'cancelada').at(-1) // a API devolve as mais recentes primeiro
+  return (
+    <dl className="ficha-resumo">
+      <div>
+        <dt>Sessões realizadas</dt>
+        <dd>{realizadas.length}</dd>
+      </div>
+      <div>
+        <dt>Faltas</dt>
+        <dd>{faltas}</dd>
+      </div>
+      <div>
+        <dt>Primeira consulta</dt>
+        <dd>{primeira ? new Date(primeira.inicio).toLocaleDateString('pt-PT') : '—'}</dd>
+      </div>
+    </dl>
+  )
+}
+
+function ProximasConsultas({ proximas, paciente }) {
+  if (proximas.length === 0) {
+    return (
+      <p className="vazio">
+        Nenhuma consulta marcada.
+        {paciente.ativo && (
+          <>
+            {' '}
+            <Link to={`/agenda?nova=1&paciente=${paciente.id}`}>Marcar agora</Link>
+          </>
+        )}
+      </p>
+    )
+  }
+  return (
+    <ul className="proximas-lista">
+      {proximas.map((c) => (
+        <li key={c.id}>
+          <Link to={linkDaConsulta(c)} className="proxima-cartao">
+            <span className="proxima-cartao-dia">{formatarDataLonga(new Date(c.inicio))}</span>
+            <strong>
+              {formatarHora(new Date(c.inicio))}–{formatarHora(new Date(c.fim))}
+            </strong>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function Historico({ anteriores, onGuardado }) {
+  if (anteriores.length === 0) return <p className="vazio">Ainda não há consultas anteriores.</p>
+
+  // "Sessão N": numeradas pela ordem em que aconteceram, só as realizadas.
+  const numero = {}
+  anteriores
+    .filter((c) => c.estado === 'realizada')
+    .toReversed()
+    .forEach((c, i) => {
+      numero[c.id] = i + 1
+    })
+
+  return (
+    <ol className="linha-tempo">
+      {anteriores.map((c) => (
+        <li key={c.id} className={`estado-${c.estado}${c.estado_automatico ? ' por-confirmar' : ''}`}>
+          <div className="linha-tempo-topo">
+            <h3>{numero[c.id] ? `Sessão ${numero[c.id]}` : 'Consulta'}</h3>
+            <span className={`etiqueta estado-${c.estado}${c.estado_automatico ? ' por-confirmar' : ''}`}>
+              {nomeDoEstado(c)}
+            </span>
+          </div>
+          <p className="linha-tempo-data">
+            {formatarDataLonga(new Date(c.inicio))}, {formatarHora(new Date(c.inicio))}
+          </p>
+          {c.estado !== 'cancelada' && <NotasConsulta consulta={c} onGuardado={onGuardado} />}
+        </li>
+      ))}
+    </ol>
   )
 }
 
@@ -90,7 +213,7 @@ export function Paciente() {
   if (erro) {
     return (
       <section>
-        <p className="hint">
+        <p className="voltar">
           <Link to="/pacientes">‹ Pacientes</Link>
         </p>
         <p className="error" role="alert">
@@ -104,65 +227,53 @@ export function Paciente() {
   const agora = new Date()
   const proximas = consultas
     .filter((c) => new Date(c.fim) >= agora && c.estado === 'agendada')
-    .reverse() // a API devolve as mais recentes primeiro; as próximas mostram-se pela ordem em que acontecem
+    .toReversed() // a API devolve as mais recentes primeiro; as próximas mostram-se pela ordem em que acontecem
   const anteriores = consultas.filter((c) => !proximas.includes(c))
+  const anos = idade(paciente.data_nascimento, agora)
 
   function atualizar(nova) {
     setConsultas((lista) => lista.map((c) => (c.id === nova.id ? nova : c)))
   }
 
   return (
-    <section>
-      <p className="hint">
+    <section className="ficha">
+      <p className="voltar">
         <Link to="/pacientes">‹ Pacientes</Link>
       </p>
-      <h1>
-        {paciente.nome}
-        {!paciente.ativo && <span className="etiqueta etiqueta-arquivado">Arquivado</span>}
-      </h1>
-      <p className="hint">
-        {paciente.data_nascimento
-          ? `Nascido(a) a ${paciente.data_nascimento.split('-').reverse().join('/')}`
-          : 'Sem data de nascimento'}{' '}
-        · Apenas dados fictícios.
-      </p>
 
-      <h2>Próximas consultas</h2>
-      {proximas.length === 0 ? (
-        <p>
-          Nenhuma consulta marcada. <Link to="/agenda">Marcar na agenda</Link>
-        </p>
-      ) : (
-        <ul className="lista-consultas">
-          {proximas.map((c) => (
-            <li key={c.id}>
-              <strong>
-                {formatarDataLonga(new Date(c.inicio))}, {formatarHora(new Date(c.inicio))}–
-                {formatarHora(new Date(c.fim))}
-              </strong>
-            </li>
-          ))}
-        </ul>
-      )}
+      <header className="ficha-cabecalho">
+        <span className="avatar avatar-grande" aria-hidden="true">
+          {iniciais(paciente.nome)}
+        </span>
+        <div className="ficha-titulo">
+          <h1>
+            {paciente.nome}
+            {!paciente.ativo && <span className="etiqueta etiqueta-arquivado">Arquivado</span>}
+          </h1>
+          <p className="pagina-subtitulo">
+            {anos === null
+              ? 'Sem data de nascimento'
+              : `${anos} anos · nascimento a ${formatarDataISO(paciente.data_nascimento)}`}
+          </p>
+        </div>
+        {paciente.ativo && (
+          <Link className="botao" to={`/agenda?nova=1&paciente=${paciente.id}`}>
+            Marcar consulta
+          </Link>
+        )}
+      </header>
 
-      <h2>Histórico e notas</h2>
-      {anteriores.length === 0 ? (
-        <p>Ainda não há consultas anteriores.</p>
-      ) : (
-        <ul className="lista-consultas">
-          {anteriores.map((c) => (
-            <li key={c.id}>
-              <div className="consulta-titulo">
-                <strong>
-                  {formatarDataLonga(new Date(c.inicio))}, {formatarHora(new Date(c.inicio))}
-                </strong>
-                <span className={`etiqueta estado-${c.estado}`}>{NOMES_ESTADO[c.estado]}</span>
-              </div>
-              <NotasConsulta consulta={c} onGuardado={atualizar} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <Resumo consultas={consultas} agora={agora} />
+
+      <section className="ficha-seccao" aria-labelledby="proximas-titulo">
+        <h2 id="proximas-titulo">Próximas consultas</h2>
+        <ProximasConsultas proximas={proximas} paciente={paciente} />
+      </section>
+
+      <section className="ficha-seccao" aria-labelledby="historico-titulo">
+        <h2 id="historico-titulo">Histórico e notas</h2>
+        <Historico anteriores={anteriores} onGuardado={atualizar} />
+      </section>
 
       <DadosDoPaciente paciente={paciente} numConsultas={consultas.length} onAlterado={setPaciente} />
     </section>

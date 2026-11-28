@@ -15,10 +15,18 @@ const ESTADOS = [
 
 // Painel para marcar uma consulta nova (consultaId = null) ou ver/editar uma existente.
 // Só DADOS FICTÍCIOS até haver DPIA aprovada.
-export function ConsultaPainel({ consultaId, inicioSugerido, pacientes, nomeDoPaciente, onFechar, onGuardado }) {
+export function ConsultaPainel({
+  consultaId,
+  inicioSugerido,
+  pacienteInicial,
+  pacientes,
+  nomeDoPaciente,
+  onFechar,
+  onGuardado,
+}) {
   const nova = !consultaId
   const [carregada, setCarregada] = useState(nova)
-  const [pacienteId, setPacienteId] = useState('')
+  const [pacienteId, setPacienteId] = useState(pacienteInicial ?? '')
   const [data, setData] = useState(paraInputData(inicioSugerido ?? new Date()))
   const [hora, setHora] = useState(paraInputHora(inicioSugerido ?? new Date()))
   const [duracao, setDuracao] = useState(50)

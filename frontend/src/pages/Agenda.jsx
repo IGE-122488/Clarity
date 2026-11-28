@@ -140,14 +140,15 @@ export function Agenda() {
   useEffect(() => {
     const dia = lerDia(parametros.get('dia'))
     const consulta = parametros.get('consulta')
-    const nova = parametros.get('nova') // "Marcar consulta" no ecrã Hoje
+    const nova = parametros.get('nova') // "Marcar consulta" no ecrã Hoje e na ficha do paciente
+    const paciente = parametros.get('paciente') // vindo da ficha: o paciente já vem escolhido
     if (!dia && !consulta && !nova) return
     if (dia) {
       setSegunda(inicioDaSemana(dia))
       setIndiceDia(diaInicial(inicioDaSemana(dia), dia))
     }
     if (consulta && UUID.test(consulta)) setPainel({ consultaId: consulta })
-    else if (nova) setPainel({ inicioSugerido: null })
+    else if (nova) setPainel({ inicioSugerido: null, pacienteId: UUID.test(paciente ?? '') ? paciente : null })
     setParametros({}, { replace: true })
   }, [parametros, setParametros])
 
@@ -377,6 +378,7 @@ export function Agenda() {
             key={painel.consultaId ?? `nova-${painel.inicioSugerido?.toISOString()}`}
             consultaId={painel.consultaId ?? null}
             inicioSugerido={painel.inicioSugerido}
+            pacienteInicial={painel.pacienteId}
             pacientes={pacientes.filter((p) => p.ativo)}
             nomeDoPaciente={nomeDoPaciente}
             onFechar={() => setPainel(null)}
