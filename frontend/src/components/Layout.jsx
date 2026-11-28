@@ -13,11 +13,14 @@ export function Layout() {
         <NavLink to="/" aria-label="Clarity — início">
           <Logo />
         </NavLink>
-        <nav aria-label="Navegação principal">
-          <NavLink to="/" end>Início</NavLink>
+        <nav aria-label="Navegação principal" className={session ? 'nav-principal' : 'nav-principal sem-sessao'}>
+          <NavLink to="/" end>
+            {session ? 'Hoje' : 'Início'}
+          </NavLink>
           {session && <NavLink to="/agenda">Agenda</NavLink>}
           {session && <NavLink to="/pacientes">Pacientes</NavLink>}
-          <NavLink to="/estado">Estado</NavLink>
+          {/* Página técnica para a equipa: não aparece na versão online. */}
+          {appEnv !== 'production' && <NavLink to="/estado">Estado</NavLink>}
         </nav>
         <div className="topbar-right">
           {appEnv !== 'production' && (

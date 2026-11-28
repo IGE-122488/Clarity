@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { ConsultaPainel } from '../components/ConsultaPainel'
 import { api } from '../lib/api'
@@ -85,9 +85,11 @@ export function Agenda() {
   useEffect(() => {
     const dia = lerDia(parametros.get('dia'))
     const consulta = parametros.get('consulta')
-    if (!dia && !consulta) return
+    const nova = parametros.get('nova') // "Marcar consulta" no ecrã Hoje
+    if (!dia && !consulta && !nova) return
     if (dia) setSegunda(inicioDaSemana(dia))
     if (consulta && UUID.test(consulta)) setPainel({ consultaId: consulta })
+    else if (nova) setPainel({ inicioSugerido: null })
     setParametros({}, { replace: true })
   }, [parametros, setParametros])
 
@@ -121,6 +123,18 @@ export function Agenda() {
       .catch((e) => setErro(e.message))
   }, [session])
 
+  // No telemóvel a semana não cabe no ecrã: começa a deslocação lateral no dia de hoje.
+  const corpo = useRef(null)
+  useEffect(() => {
+    const el = corpo.current
+    if (!el || el.scrollWidth <= el.clientWidth) return
+    const titulo = el.querySelector('.agenda-dia-titulo.hoje')
+    const horas = el.querySelector('.agenda-horas')
+    el.scrollLeft = titulo
+      ? titulo.getBoundingClientRect().left - el.getBoundingClientRect().left + el.scrollLeft - (horas?.offsetWidth ?? 0)
+      : 0
+  }, [segunda, session])
+
   const nomes = useMemo(() => Object.fromEntries(pacientes.map((p) => [p.id, p.nome])), [pacientes])
   const nomeDoPaciente = (id) => nomes[id] ?? 'Paciente'
 
@@ -146,14 +160,14 @@ export function Agenda() {
       <div className="agenda-cabecalho">
         <h1>Agenda</h1>
         <div className="agenda-navegacao">
-          <button type="button" className="botao-secundario" onClick={() => setSegunda(somarDias(segunda, -7))}>
-            ‹ Semana anterior
+          <button type="button" className="botao-secundario" onClick={() => setSegunda(somarDias(segunda, -7))} aria-label="Semana anterior">
+            ‹<span className="rotulo-longo"> Semana anterior</span>
           </button>
           <button type="button" className="botao-secundario" onClick={() => setSegunda(inicioDaSemana(new Date()))}>
             Hoje
           </button>
-          <button type="button" className="botao-secundario" onClick={() => setSegunda(somarDias(segunda, 7))}>
-            Semana seguinte ›
+          <button type="button" className="botao-secundario" onClick={() => setSegunda(somarDias(segunda, 7))} aria-label="Semana seguinte">
+            <span className="rotulo-longo">Semana seguinte </span>›
           </button>
         </div>
         <span className="agenda-intervalo">
@@ -181,7 +195,7 @@ export function Agenda() {
         </p>
       )}
 
-      <div className="agenda-corpo">
+      <div className="agenda-corpo" ref={corpo}>
         <div className="agenda" aria-label="Agenda semanal">
           <div className="agenda-horas" aria-hidden="true">
             <div className="agenda-dia-titulo" />
