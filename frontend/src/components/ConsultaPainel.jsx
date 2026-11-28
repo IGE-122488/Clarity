@@ -30,6 +30,15 @@ export function ConsultaPainel({ consultaId, inicioSugerido, pacientes, nomeDoPa
   const [aGuardar, setAGuardar] = useState(false)
   const [original, setOriginal] = useState(null) // horário guardado, para só remarcar se mudou
 
+  // Esc fecha o painel, como qualquer janela por cima da página.
+  useEffect(() => {
+    const aoTecla = (e) => {
+      if (e.key === 'Escape') onFechar()
+    }
+    globalThis.addEventListener('keydown', aoTecla)
+    return () => globalThis.removeEventListener('keydown', aoTecla)
+  }, [onFechar])
+
   useEffect(() => {
     if (nova) return
     api(`/api/consultas/${consultaId}`)
@@ -103,7 +112,7 @@ export function ConsultaPainel({ consultaId, inicioSugerido, pacientes, nomeDoPa
     <aside className="painel" aria-label={nova ? 'Marcar consulta' : 'Consulta'}>
       <div className="painel-topo">
         <h2>{nova ? 'Marcar consulta' : nomeDoPaciente(pacienteId) || 'Consulta'}</h2>
-        <button type="button" className="link-button" onClick={onFechar} aria-label="Fechar">
+        <button type="button" className="link-button painel-fechar" onClick={onFechar} aria-label="Fechar" title="Fechar (Esc)">
           ✕
         </button>
       </div>
