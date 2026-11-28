@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router'
 import { Logo } from './Logo'
 import { Sino } from './Sino'
+import { TemaBotao } from './TemaBotao'
 import { appEnv, supabase } from '../lib/supabase'
 import { useSession } from '../lib/useSession'
 
@@ -28,6 +29,7 @@ export function Layout() {
               {appEnv === 'preview' ? 'Pré-visualização' : 'Desenvolvimento'} · dados fictícios
             </span>
           )}
+          <TemaBotao />
           {session && <Sino key={session.user.id} session={session} />}
           {session ? (
             <button type="button" className="link-button" onClick={() => supabase.auth.signOut()}>

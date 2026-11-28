@@ -19,7 +19,7 @@ export function Entrar() {
       setErro('Email ou palavra-passe incorretos.')
       return
     }
-    navigate('/estado')
+    navigate('/', { replace: true }) // o ecrã Hoje; "Voltar" no browser não regressa ao formulário
   }
 
   return (

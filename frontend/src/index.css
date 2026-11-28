@@ -21,6 +21,28 @@
   --realizada-texto: #1f6236;
   --faltou-fundo: #f8d9d9;
   --faltou-texto: #8f1a1a;
+  /* Superfícies, linhas e botões: tudo o que muda no modo escuro passa por aqui */
+  --superficie: #fff;
+  --superficie-2: #f7faf8;
+  --linha: #e8eeeb;
+  --linha-suave: #eef2f0;
+  --texto-bloco: #33484a;
+  --confirmar-linha: #b08a2e;
+  --cancelada-linha: #b9c2c0;
+  --cancelada-fundo: #f1f3f2;
+  --botao-fundo: #1e3a3d;
+  --sobre-botao: #fff;
+  --destaque-fundo: #1e3a3d;
+  --erro-texto: #9b1c1c;
+  --ok-texto: #1b6b3a;
+  --perigo-fundo: #9b1c1c;
+  --perigo-borda: #e8c4c4;
+  --arquivado-fundo: #ece9e1;
+  --arquivado-texto: #5b5546;
+  --sombra-painel: -16px 0 40px rgb(30 58 61 / 0.14);
+  --sombra-menu: 0 10px 30px rgb(30 58 61 / 0.12);
+  --ligacao: #2b5f9e;
+  color-scheme: light;
   /* Títulos em Outfit (a letra do logótipo); texto em Atkinson Hyperlegible, feita para ler bem. */
   --letra-titulos: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
   --letra-texto: 'Atkinson Hyperlegible Next Variable', 'Atkinson Hyperlegible Next', system-ui, -apple-system,
@@ -58,6 +80,11 @@ h3 {
   box-sizing: border-box;
 }
 
+/* Ligações de texto com a mesma cor nos dois modos (o azul por omissão do browser fica ilegível no escuro) */
+a {
+  color: var(--ligacao);
+}
+
 body {
   margin: 0;
 }
@@ -70,7 +97,7 @@ body {
   align-items: center;
   gap: 1.5rem;
   padding: 0.6rem 1.5rem;
-  background: #fff;
+  background: var(--superficie);
   border-bottom: 1px solid var(--border);
 }
 
@@ -190,7 +217,7 @@ input {
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--superficie);
 }
 
 button {
@@ -198,8 +225,8 @@ button {
   padding: 0.6rem 1rem;
   border: 0;
   border-radius: 8px;
-  background: var(--ink);
-  color: #fff;
+  background: var(--botao-fundo);
+  color: var(--sobre-botao);
   cursor: pointer;
 }
 
@@ -215,11 +242,11 @@ button:disabled {
 }
 
 .error {
-  color: #9b1c1c;
+  color: var(--erro-texto);
 }
 
 .ok {
-  color: #1b6b3a;
+  color: var(--ok-texto);
 }
 
 .hint {
@@ -248,7 +275,7 @@ textarea {
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--superficie);
   color: var(--ink);
 }
 
@@ -264,7 +291,7 @@ textarea:focus-visible {
 }
 
 .botao-secundario {
-  background: #fff;
+  background: var(--superficie);
   color: var(--ink);
   border: 1px solid var(--border);
 }
@@ -276,14 +303,14 @@ a.botao {
   justify-content: center;
   padding: 0.6rem 1rem;
   border-radius: 8px;
-  background: var(--ink);
-  color: #fff;
+  background: var(--botao-fundo);
+  color: var(--sobre-botao);
   text-decoration: none;
   font-weight: 600;
 }
 
 a.botao.botao-secundario {
-  background: #fff;
+  background: var(--superficie);
   color: var(--ink);
   border: 1px solid var(--border);
 }
@@ -412,7 +439,7 @@ a.botao:focus-visible {
   flex: 1;
   display: grid;
   grid-template-columns: 3.5rem repeat(7, minmax(0, 1fr));
-  background: #fff;
+  background: var(--superficie);
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
@@ -446,8 +473,8 @@ a.botao:focus-visible {
 }
 
 .agenda-dia-titulo.hoje .agenda-dia-numero {
-  background: var(--ink);
-  color: #fff;
+  background: var(--botao-fundo);
+  color: var(--sobre-botao);
 }
 
 .agenda-hora {
@@ -455,11 +482,11 @@ a.botao:focus-visible {
   color: var(--muted);
   text-align: right;
   padding: 0.2rem 0.5rem 0 0;
-  border-bottom: 1px solid #e8eeeb;
+  border-bottom: 1px solid var(--linha);
 }
 
 .agenda-dia {
-  border-left: 1px solid #e8eeeb;
+  border-left: 1px solid var(--linha);
 }
 
 .agenda-coluna {
@@ -467,7 +494,7 @@ a.botao:focus-visible {
 }
 
 .fim-de-semana .agenda-coluna {
-  background: #f8faf9;
+  background: var(--superficie-2);
 }
 
 /* Linha contínua à hora certa e tracejada à meia hora */
@@ -476,8 +503,8 @@ a.botao:focus-visible {
   width: 100%;
   padding: 0;
   border-radius: 0;
-  background: linear-gradient(to bottom, transparent calc(50% - 0.5px), #eef2f0 calc(50% - 0.5px), #eef2f0 calc(50% + 0.5px), transparent calc(50% + 0.5px));
-  border-bottom: 1px solid #e8eeeb;
+  background: linear-gradient(to bottom, transparent calc(50% - 0.5px), var(--linha-suave) calc(50% - 0.5px), var(--linha-suave) calc(50% + 0.5px), transparent calc(50% + 0.5px));
+  border-bottom: 1px solid var(--linha);
 }
 
 .agenda-celula:hover {
@@ -541,7 +568,7 @@ a.botao:focus-visible {
 }
 
 .agenda-consulta span {
-  color: #33484a;
+  color: var(--texto-bloco);
 }
 
 .agenda-consulta em {
@@ -572,8 +599,8 @@ a.botao:focus-visible {
 
 .agenda-consulta.por-confirmar,
 .amostra-por-confirmar {
-  border: 1px dashed #b08a2e;
-  border-left: 3px solid #b08a2e;
+  border: 1px dashed var(--confirmar-linha);
+  border-left: 3px solid var(--confirmar-linha);
   background: var(--warning-bg);
 }
 
@@ -595,8 +622,8 @@ a.botao:focus-visible {
 .agenda-consulta.estado-cancelada,
 .amostra-cancelada {
   border-color: var(--border);
-  border-left-color: #b9c2c0;
-  background: #f1f3f2;
+  border-left-color: var(--cancelada-linha);
+  background: var(--cancelada-fundo);
 }
 
 .agenda-consulta.estado-cancelada strong {
@@ -619,7 +646,7 @@ a.botao:focus-visible {
   padding: 0.4rem 0 0.55rem;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--superficie);
   color: var(--ink);
   font-weight: 400;
 }
@@ -640,14 +667,14 @@ a.botao:focus-visible {
 }
 
 .agenda-dia-chip[aria-pressed='true'] {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #fff;
+  background: var(--botao-fundo);
+  border-color: var(--botao-fundo);
+  color: var(--sobre-botao);
 }
 
 .agenda-dia-chip[aria-pressed='true'] span:first-child,
 .agenda-dia-chip[aria-pressed='true'].hoje strong {
-  color: #e4efeb;
+  color: var(--sobre-botao);
 }
 
 .agenda-dia-ponto {
@@ -660,7 +687,7 @@ a.botao:focus-visible {
 }
 
 .agenda-dia-chip[aria-pressed='true'] .agenda-dia-ponto {
-  background: #e4efeb;
+  background: var(--sobre-botao);
 }
 
 /* Painel de consulta: abre por cima da agenda, encostado à direita, para não apertar a grelha */
@@ -674,9 +701,9 @@ a.botao:focus-visible {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 1.5rem calc(1.5rem + env(safe-area-inset-bottom));
-  background: #fff;
+  background: var(--superficie);
   border-left: 1px solid var(--border);
-  box-shadow: -16px 0 40px rgb(30 58 61 / 0.14);
+  box-shadow: var(--sombra-painel);
 }
 
 /* Título e botão de fechar ficam visíveis ao deslocar o painel */
@@ -690,7 +717,7 @@ a.botao:focus-visible {
   gap: 1rem;
   margin: 0 -1.5rem 1.25rem;
   padding: 1rem 1.5rem;
-  background: #fff;
+  background: var(--superficie);
   border-bottom: 1px solid var(--border);
 }
 
@@ -766,7 +793,7 @@ a.botao:focus-visible {
 }
 
 .etiqueta.estado-cancelada {
-  background: #f1f3f2;
+  background: var(--cancelada-fundo);
   color: var(--muted);
 }
 
@@ -790,7 +817,7 @@ a.botao:focus-visible {
   border: 1px solid var(--border);
   border-left: 4px solid var(--teal);
   border-radius: 8px;
-  background: #fafcfb;
+  background: var(--superficie-2);
 }
 
 .briefing-topo {
@@ -828,7 +855,7 @@ a.botao:focus-visible {
 
 .digitalizar.a-arrastar {
   border-color: var(--teal);
-  background: #eef6f4;
+  background: var(--sage-light);
 }
 
 .zona-convite {
@@ -866,7 +893,7 @@ a.botao:focus-visible {
   padding: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fafcfb;
+  background: var(--superficie-2);
 }
 
 .revisao-ocr img {
@@ -909,8 +936,8 @@ a.botao:focus-visible {
   height: 1.15rem;
   padding: 0 0.3rem;
   border-radius: 999px;
-  border: 2px solid #fff;
-  background: #9b1c1c;
+  border: 2px solid var(--superficie);
+  background: var(--perigo-fundo);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
@@ -929,8 +956,8 @@ a.botao:focus-visible {
   padding: 1rem;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 10px 30px rgb(30 58 61 / 0.12);
+  background: var(--superficie);
+  box-shadow: var(--sombra-menu);
 }
 
 .sino-painel h2 {
@@ -1051,7 +1078,7 @@ a.botao:focus-visible {
   padding: 1rem 1.25rem;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--superficie);
 }
 
 .dados-bloco h3 {
@@ -1079,11 +1106,11 @@ a.botao:focus-visible {
 }
 
 .dados-perigo {
-  border-color: #e8c4c4;
+  border-color: var(--perigo-borda);
 }
 
 .botao-perigo {
-  background: #9b1c1c;
+  background: var(--perigo-fundo);
   color: #fff;
 }
 
@@ -1096,8 +1123,8 @@ a.botao:focus-visible {
   margin-left: 0.6rem;
   vertical-align: middle;
   font-size: 0.8rem;
-  background: #ece9e1;
-  color: #5b5546;
+  background: var(--arquivado-fundo);
+  color: var(--arquivado-texto);
 }
 
 .aviso-confirmar {
@@ -1129,7 +1156,7 @@ a.botao:focus-visible {
 }
 
 .botao-mini.secundario {
-  background: #fff;
+  background: var(--superficie);
   color: var(--ink);
   border: 1px solid var(--border);
 }
@@ -1180,7 +1207,7 @@ a.botao:focus-visible {
   overflow: hidden;
   padding: 1.5rem 1.75rem 1.75rem;
   border-radius: 16px;
-  background: var(--ink);
+  background: var(--destaque-fundo);
   color: #fff;
 }
 
@@ -1264,7 +1291,7 @@ a.botao:focus-visible {
 
 a.botao.botao-claro {
   background: #fff;
-  color: var(--ink);
+  color: #1e3a3d; /* sempre sobre o cartão escuro, nos dois modos */
 }
 
 a.botao.botao-contorno {
@@ -1287,7 +1314,7 @@ a.botao.botao-contorno {
   padding: 1.25rem 1.25rem 1rem;
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: #fff;
+  background: var(--superficie);
 }
 
 .dia h2,
@@ -1388,7 +1415,7 @@ a.botao.botao-contorno {
   gap: 0.9rem;
   margin: 0 0 1.5rem;
   padding: 1.25rem 1.5rem;
-  background: #fff;
+  background: var(--superficie);
   border: 1px solid var(--border);
   border-radius: 12px;
 }
@@ -1425,7 +1452,7 @@ a.botao.botao-contorno {
 .procura {
   width: min(100%, 22rem);
   padding-left: 2.4rem;
-  background: #fff
+  background: var(--superficie)
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2355666b' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E")
     no-repeat 0.8rem center / 1.05rem;
 }
@@ -1434,7 +1461,7 @@ a.botao.botao-contorno {
   margin: 0;
   padding: 0;
   list-style: none;
-  background: #fff;
+  background: var(--superficie);
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
@@ -1443,7 +1470,7 @@ a.botao.botao-contorno {
 .paciente-linha {
   display: flex;
   align-items: center;
-  border-top: 1px solid #e8eeeb;
+  border-top: 1px solid var(--linha);
 }
 
 .paciente-linha:first-child {
@@ -1463,7 +1490,7 @@ a.botao.botao-contorno {
 }
 
 .paciente-ligacao:hover {
-  background: #f6f9f7;
+  background: var(--superficie-2);
 }
 
 .paciente-ligacao:focus-visible {
@@ -1531,8 +1558,8 @@ a.botao.botao-contorno {
 }
 
 .paciente-linha.arquivado .avatar {
-  background: #ece9e1;
-  color: #5b5546;
+  background: var(--arquivado-fundo);
+  color: var(--arquivado-texto);
 }
 
 .paciente-linha.arquivado .paciente-nome strong {
@@ -1543,7 +1570,7 @@ a.botao.botao-contorno {
   padding: 1.5rem;
   text-align: center;
   color: var(--muted);
-  background: #fff;
+  background: var(--superficie);
   border: 1px dashed var(--border);
   border-radius: 12px;
 }
@@ -1589,7 +1616,7 @@ a.botao.botao-contorno {
 
 .ficha-resumo div {
   padding: 0.9rem 1.1rem;
-  background: #fff;
+  background: var(--superficie);
   border: 1px solid var(--border);
   border-radius: 12px;
 }
@@ -1677,7 +1704,7 @@ a.botao.botao-contorno {
   position: relative;
   margin-bottom: 1rem;
   padding: 1rem 1.25rem;
-  background: #fff;
+  background: var(--superficie);
   border: 1px solid var(--border);
   border-radius: 12px;
 }
@@ -1703,15 +1730,15 @@ a.botao.botao-contorno {
 }
 
 .linha-tempo li.estado-cancelada::before {
-  background: #b9c2c0;
+  background: var(--cancelada-linha);
 }
 
 .linha-tempo li.por-confirmar::before {
-  background: #b08a2e;
+  background: var(--confirmar-linha);
 }
 
 .linha-tempo li.estado-cancelada {
-  background: #fafbfa;
+  background: var(--superficie-2);
 }
 
 .linha-tempo-topo {
@@ -1740,6 +1767,80 @@ a.botao.botao-contorno {
 
 .notas textarea {
   width: 100%;
+}
+
+/* Modo escuro (passo 13): as mesmas regras, outras cores. Escolhido no botão da lua; sem escolha, segue o sistema. */
+:root[data-tema='escuro'] {
+  color-scheme: dark;
+  --ink: #e3ece9;
+  --teal: #6fae9f;
+  --teal-escuro: #8cc9b9;
+  --sage: #8ab4a8;
+  --sage-light: #213936;
+  --paper: #0f1a1b;
+  --muted: #9fb2ae;
+  --border: #2c3f41;
+  --danger: #e57373;
+  --warning-bg: #4a3c17;
+  --warning-ink: #f3d68f;
+  --agendada-fundo: #24395a;
+  --agendada-linha: #6b9de0;
+  --agendada-texto: #b3cff5;
+  --realizada-fundo: #1f4432;
+  --realizada-linha: #57b47a;
+  --realizada-texto: #a6dcb8;
+  --faltou-fundo: #4f272a;
+  --faltou-texto: #f3aaaa;
+  --superficie: #162527;
+  --superficie-2: #1b2b2d;
+  --linha: #233537;
+  --linha-suave: #1d2e30;
+  --texto-bloco: #c9d6d3;
+  --confirmar-linha: #d1a84a;
+  --cancelada-linha: #5f6f6e;
+  --cancelada-fundo: #283536;
+  --botao-fundo: #8cc9b9;
+  --sobre-botao: #0f1a1b;
+  --destaque-fundo: #1d3c3b;
+  --erro-texto: #f3aaaa;
+  --ok-texto: #93d7aa;
+  --perigo-fundo: #b3312f;
+  --perigo-borda: #5a2a2a;
+  --arquivado-fundo: #2e2a21;
+  --arquivado-texto: #d8d0bd;
+  --sombra-painel: -16px 0 40px rgb(0 0 0 / 0.45);
+  --sombra-menu: 0 10px 30px rgb(0 0 0 / 0.5);
+  --ligacao: #9cc3f0;
+}
+
+/* O logótipo tem as cores escritas no SVG; no escuro, o arco de fora e o ponto passam a claros */
+[data-tema='escuro'] .logo-arco-fora {
+  stroke: #e3ece9;
+}
+
+[data-tema='escuro'] .logo-ponto {
+  fill: #e3ece9;
+}
+
+[data-tema='escuro'] .procura {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239fb2ae' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+}
+
+/* Botão da lua/sol, ao lado do sino (mesmo tamanho e estilo) */
+.tema-botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink);
+}
+
+.tema-botao:hover {
+  background: var(--sage-light);
 }
 
 @media (max-width: 720px) {
@@ -1771,7 +1872,7 @@ a.botao.botao-contorno {
     grid-auto-columns: 1fr;
     gap: 0.25rem;
     padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom));
-    background: #fff;
+    background: var(--superficie);
     border-top: 1px solid var(--border);
   }
 
