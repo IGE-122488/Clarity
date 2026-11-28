@@ -187,7 +187,7 @@ function Hoje() {
           <Link className="botao" to="/agenda?nova=1">
             Marcar consulta
           </Link>
-          <Link className="botao botao-secundario" to="/pacientes">
+          <Link className="botao botao-secundario" to="/pacientes?novo=1">
             Novo paciente
           </Link>
         </div>
