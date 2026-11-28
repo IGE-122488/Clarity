@@ -10,6 +10,17 @@
   --danger: #9b1c1c;
   --warning-bg: #fff4d6;
   --warning-ink: #6b4e00;
+  --teal-escuro: #3f7468; /* --teal para texto pequeno: 5.4:1 sobre branco */
+  /* Estados das consultas (agenda, ecrã Hoje e ficha): azul = marcada, verde = realizada, vermelho = faltou.
+     Texto sobre o fundo respetivo com contraste >= 6:1. */
+  --agendada-fundo: #dbe8f7;
+  --agendada-linha: #2f62a8;
+  --agendada-texto: #1f4f8f;
+  --realizada-fundo: #d6eedd;
+  --realizada-linha: #2e7d4a;
+  --realizada-texto: #1f6236;
+  --faltou-fundo: #f8d9d9;
+  --faltou-texto: #8f1a1a;
   /* Títulos em Outfit (a letra do logótipo); texto em Atkinson Hyperlegible, feita para ler bem. */
   --letra-titulos: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
   --letra-texto: 'Atkinson Hyperlegible Next Variable', 'Atkinson Hyperlegible Next', system-ui, -apple-system,
@@ -327,26 +338,97 @@ a.botao:focus-visible {
 .agenda-cabecalho {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .agenda-cabecalho h1 {
-  margin: 0 0.5rem 0 0;
-}
-
-.agenda-navegacao {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.agenda-navegacao button {
-  padding: 0.45rem 0.8rem;
+  margin: 0;
 }
 
 .agenda-intervalo {
-  font-weight: 600;
-  margin-right: auto;
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.agenda-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ‹ Hoje › como um só controlo */
+.agenda-navegacao {
+  display: flex;
+}
+
+.agenda-navegacao button {
+  min-width: 2.75rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 0;
+}
+
+.agenda-navegacao button + button {
+  margin-left: -1px;
+}
+
+.agenda-navegacao button:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.agenda-navegacao button:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.agenda-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-top: 1.25rem;
+}
+
+.agenda-opcoes .checkbox {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.agenda-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.agenda-legenda li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.agenda-amostra {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  border-left-width: 3px;
+}
+
+.agenda-dica {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+}
+
+.agenda-dias-tel {
+  display: none;
 }
 
 .agenda-corpo {
@@ -362,119 +444,326 @@ a.botao:focus-visible {
   grid-template-columns: 3.5rem repeat(7, minmax(0, 1fr));
   background: #fff;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
 .agenda-dia-titulo {
-  height: 2.5rem;
+  height: 3.6rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muted);
+  gap: 0.1rem;
   border-bottom: 1px solid var(--border);
 }
 
-.agenda-dia-titulo.hoje {
+.agenda-dia-semana {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.agenda-dia-numero {
+  display: grid;
+  place-items: center;
+  min-width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  font-family: var(--letra-titulos);
+  font-size: 1.15rem;
+  font-weight: 600;
   color: var(--ink);
-  background: var(--sage-light);
+}
+
+.agenda-dia-titulo.hoje .agenda-dia-numero {
+  background: var(--ink);
+  color: #fff;
 }
 
 .agenda-hora {
   font-size: 0.75rem;
   color: var(--muted);
   text-align: right;
-  padding: 0.15rem 0.4rem 0 0;
-  border-bottom: 1px solid var(--border);
+  padding: 0.2rem 0.5rem 0 0;
+  border-bottom: 1px solid #e8eeeb;
 }
 
 .agenda-dia {
-  border-left: 1px solid var(--border);
+  border-left: 1px solid #e8eeeb;
 }
 
 .agenda-coluna {
   position: relative;
 }
 
+.fim-de-semana .agenda-coluna {
+  background: #f8faf9;
+}
+
+/* Linha contínua à hora certa e tracejada à meia hora */
 .agenda-celula {
   display: block;
   width: 100%;
   padding: 0;
   border-radius: 0;
-  background: transparent;
-  border-bottom: 1px solid var(--border);
+  background: linear-gradient(to bottom, transparent calc(50% - 0.5px), #eef2f0 calc(50% - 0.5px), #eef2f0 calc(50% + 0.5px), transparent calc(50% + 0.5px));
+  border-bottom: 1px solid #e8eeeb;
 }
 
 .agenda-celula:hover {
-  background: var(--sage-light);
+  background-color: var(--sage-light);
 }
 
+.agenda-agora {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--teal-escuro);
+  pointer-events: none;
+}
+
+.agenda-agora::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--teal-escuro);
+}
+
+/* Blocos das consultas: cor por estado, e o estado também por escrito quando importa */
 .agenda-consulta {
   position: absolute;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.1rem;
+  gap: 0.05rem;
   overflow: hidden;
-  padding: 0.25rem 0.4rem;
+  padding: 0.3rem 0.45rem;
   border-radius: 6px;
-  border-left: 4px solid var(--teal);
-  background: #dceae5;
+  border: 1px solid transparent;
+  border-left: 3px solid var(--agendada-linha);
+  background: var(--agendada-fundo);
   color: var(--ink);
   font-size: 0.78rem;
+  font-weight: 400;
   line-height: 1.25;
   text-align: left;
 }
 
+.agenda-consulta:hover {
+  filter: brightness(0.97);
+}
+
+.agenda-consulta strong,
 .agenda-consulta span {
+  flex-shrink: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-consulta span {
+  color: #33484a;
+}
+
+.agenda-consulta em {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.agenda-consulta.estado-agendada,
+.amostra-agendada {
+  border-left-color: var(--agendada-linha);
+  background: var(--agendada-fundo);
+}
+
+.agenda-consulta.estado-agendada em {
+  color: var(--agendada-texto);
+}
+
+.agenda-consulta.estado-realizada,
+.amostra-realizada {
+  border-left-color: var(--realizada-linha);
+  background: var(--realizada-fundo);
+}
+
+.agenda-consulta.estado-realizada em,
+.agenda-consulta.estado-realizada b {
+  color: var(--realizada-texto);
+}
+
+.agenda-consulta.por-confirmar,
+.amostra-por-confirmar {
+  border: 1px dashed #b08a2e;
+  border-left: 3px solid #b08a2e;
+  background: var(--warning-bg);
+}
+
+.agenda-consulta.por-confirmar em {
+  color: var(--warning-ink);
+}
+
+.agenda-consulta.estado-faltou,
+.amostra-faltou {
+  border-left-color: var(--danger);
+  background: var(--faltou-fundo);
+}
+
+.agenda-consulta.estado-faltou em,
+.agenda-consulta.estado-faltou b {
+  color: var(--faltou-texto);
+}
+
+.agenda-consulta.estado-cancelada,
+.amostra-cancelada {
+  border-color: var(--border);
+  border-left-color: #b9c2c0;
+  background: #f1f3f2;
+}
+
+.agenda-consulta.estado-cancelada strong {
   color: var(--muted);
-}
-
-.agenda-consulta.estado-realizada {
-  border-left-color: var(--ink);
-  background: #e9eef0;
-}
-
-.agenda-consulta.estado-faltou {
-  border-left-color: #b45309;
-  background: #fbeee0;
-}
-
-.agenda-consulta.estado-cancelada {
-  border-left-color: #9ca3af;
-  background: #f3f4f6;
   text-decoration: line-through;
 }
 
-/* Painel de consulta */
-.painel {
-  width: 360px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 1rem;
-  padding: 1rem 1.25rem 1.25rem;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+.agenda-consulta.estado-cancelada em {
+  color: var(--muted);
 }
 
+/* Telemóvel: fila de dias da semana (só aparece em ecrãs pequenos) */
+.agenda-dia-chip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  min-height: 3.6rem;
+  padding: 0.4rem 0 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 400;
+}
+
+.agenda-dia-chip span:first-child {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.agenda-dia-chip strong {
+  font-family: var(--letra-titulos);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.agenda-dia-chip.hoje strong {
+  color: var(--teal-escuro);
+}
+
+.agenda-dia-chip[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.agenda-dia-chip[aria-pressed='true'] span:first-child,
+.agenda-dia-chip[aria-pressed='true'].hoje strong {
+  color: #e4efeb;
+}
+
+.agenda-dia-ponto {
+  position: absolute;
+  bottom: 0.3rem;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+.agenda-dia-chip[aria-pressed='true'] .agenda-dia-ponto {
+  background: #e4efeb;
+}
+
+/* Painel de consulta: abre por cima da agenda, encostado à direita, para não apertar a grelha */
+.painel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  width: min(30rem, 100vw);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 1.5rem calc(1.5rem + env(safe-area-inset-bottom));
+  background: #fff;
+  border-left: 1px solid var(--border);
+  box-shadow: -16px 0 40px rgb(30 58 61 / 0.14);
+}
+
+/* Título e botão de fechar ficam visíveis ao deslocar o painel */
 .painel-topo {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
+  margin: 0 -1.5rem 1.25rem;
+  padding: 1rem 1.5rem;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
 }
 
 .painel-topo h2 {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1.3rem;
+}
+
+.painel-fechar {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 8px;
+  font-size: 1.1rem;
+}
+
+.painel-fechar:hover {
+  background: var(--sage-light);
+  color: var(--ink);
+}
+
+/* As colunas não podem crescer para lá do painel por causa da largura mínima dos campos de data e hora */
+.painel .form {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .linha-campos {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
-  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+.linha-campos label {
+  min-width: 0;
+}
+
+.linha-campos input,
+.linha-campos select,
+.painel .form select {
+  width: 100%;
+  min-width: 0;
 }
 
 .painel-acoes {
@@ -512,14 +801,29 @@ a.botao:focus-visible {
   background: var(--sage-light);
 }
 
+.etiqueta.estado-agendada {
+  background: var(--agendada-fundo);
+  color: var(--agendada-texto);
+}
+
+.etiqueta.estado-realizada {
+  background: var(--realizada-fundo);
+  color: var(--realizada-texto);
+}
+
 .etiqueta.estado-faltou {
-  background: #fbeee0;
-  color: #7c3a06;
+  background: var(--faltou-fundo);
+  color: var(--faltou-texto);
 }
 
 .etiqueta.estado-cancelada {
-  background: #f3f4f6;
-  color: #4b5563;
+  background: #f1f3f2;
+  color: var(--muted);
+}
+
+.etiqueta.por-confirmar {
+  background: var(--warning-bg);
+  color: var(--warning-ink);
 }
 
 .notas-acoes {
@@ -532,18 +836,6 @@ a.botao:focus-visible {
 .tabela a {
   color: var(--ink);
   font-weight: 600;
-}
-
-.agenda-opcoes {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.agenda-opcoes .checkbox {
-  margin: 0;
-  white-space: nowrap;
 }
 
 /* Briefing pré-sessão (IA) */
@@ -863,10 +1155,6 @@ a.botao:focus-visible {
   color: #5b5546;
 }
 
-.agenda-consulta.por-confirmar {
-  border-style: dashed;
-}
-
 .aviso-confirmar {
   display: block;
   margin-top: 0.35rem;
@@ -1109,7 +1397,7 @@ a.botao.botao-contorno {
   margin: 0.25rem 0;
   font-size: 0.8rem;
   font-weight: 700;
-  color: #3f7468; /* --teal escurecido: texto pequeno precisa de contraste 4.5:1 sobre branco */
+  color: var(--teal-escuro);
 }
 
 .dia-agora::after {
@@ -1235,44 +1523,59 @@ a.botao.botao-contorno {
     font-size: 1.9rem;
   }
 
-  .agenda-corpo {
-    overflow-x: auto;
+  /* Agenda: um dia de cada vez, escolhido na fila de dias por cima da grelha */
+  .agenda-acoes {
+    width: 100%;
+    justify-content: space-between;
   }
 
-  .agenda {
-    min-width: 44rem;
-    overflow: clip;
+  .agenda-legenda {
+    font-size: 0.8rem;
   }
 
-  .agenda-horas {
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background: #fff;
-    border-right: 1px solid var(--border);
-  }
-
-  .rotulo-longo {
+  .agenda-dica {
     display: none;
   }
 
-  .agenda-navegacao button {
-    min-width: 2.75rem;
+  .agenda-dias-tel {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.3rem;
+    margin-top: 1rem;
+  }
+
+  .agenda {
+    grid-template-columns: 3.25rem minmax(0, 1fr);
+  }
+
+  .agenda .agenda-dia-titulo {
+    display: none;
+  }
+
+  .agenda-dia {
+    display: none;
+  }
+
+  .agenda-dia.escolhido {
+    display: block;
   }
 
   .painel {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    width: auto;
-    border-radius: 0;
-    border: 0;
-    overflow-y: auto;
-    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    width: 100vw;
+    border-left: 0;
+    box-shadow: none;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .painel-topo {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding: 0.6rem 1rem;
   }
 
   .linha-campos {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .linha-campos > :first-child {

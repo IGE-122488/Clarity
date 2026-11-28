@@ -236,7 +236,7 @@ function Hoje() {
                       </span>
                       <span className="dia-nome">{nome(c.paciente_id)}</span>
                       {c.estado !== 'agendada' && (
-                        <span className={`etiqueta estado-${c.estado}`}>
+                        <span className={`etiqueta estado-${c.estado}${c.estado_automatico ? ' por-confirmar' : ''}`}>
                           {c.estado_automatico ? 'Por confirmar' : ESTADO_TEXTO[c.estado]}
                         </span>
                       )}
