@@ -1,23 +1,46 @@
 :root {
+  /* Cores do logótipo; o fundo é um verde-névoa frio, não um creme. */
   --ink: #1e3a3d;
   --teal: #4e8a7e;
   --sage: #8ab4a8;
   --sage-light: #e6eee9;
-  --paper: #f7f7f4;
-  --muted: #5b6b70;
-  --border: #e2ded5;
+  --paper: #f2f5f3;
+  --muted: #55666b;
+  --border: #d9e1dd;
+  --danger: #9b1c1c;
   --warning-bg: #fff4d6;
   --warning-ink: #6b4e00;
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  /* Títulos em Outfit (a letra do logótipo); texto em Atkinson Hyperlegible, feita para ler bem. */
+  --letra-titulos: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
+  --letra-texto: 'Atkinson Hyperlegible Next Variable', 'Atkinson Hyperlegible Next', system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+  font-family: var(--letra-texto);
   color: var(--ink);
   background: var(--paper);
-  line-height: 1.5;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--letra-titulos);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2rem;
+  margin: 0 0 0.75rem;
+}
+
+h2 {
+  font-size: 1.3rem;
+}
+
+h3 {
+  font-size: 1.05rem;
 }
 
 * {
@@ -29,17 +52,20 @@ body {
 }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.6rem 1.5rem;
   background: #fff;
   border-bottom: 1px solid var(--border);
 }
 
 .topbar nav {
   display: flex;
-  gap: 1rem;
+  gap: 0.25rem;
 }
 
 .topbar a {
@@ -47,8 +73,18 @@ body {
   text-decoration: none;
 }
 
-.topbar a.active {
+.nav-principal a {
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+}
+
+.nav-principal a:hover {
   color: var(--ink);
+}
+
+.nav-principal a.active {
+  color: var(--ink);
+  background: var(--sage-light);
   font-weight: 600;
 }
 
@@ -59,6 +95,7 @@ body {
 }
 
 .logo-word {
+  font-family: var(--letra-titulos);
   font-size: 1.4rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -249,6 +286,30 @@ textarea:focus-visible {
   background: #fff;
   color: var(--ink);
   border: 1px solid var(--border);
+}
+
+/* Links com aspeto de botão */
+a.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a.botao.botao-secundario {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--border);
+}
+
+a.botao:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
 }
 
 .aviso {
@@ -838,4 +899,417 @@ textarea:focus-visible {
   background: #fff;
   color: var(--ink);
   border: 1px solid var(--border);
+}
+
+/* Ecrã Hoje (passo 10) */
+.hoje-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.hoje-cabecalho h1 {
+  margin: 0;
+}
+
+.hoje-data {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.hoje-data::first-letter {
+  text-transform: uppercase;
+}
+
+.hoje-atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hoje-grelha {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+/* A próxima consulta é o único elemento forte do ecrã: fundo escuro e os arcos do logótipo. */
+.proxima {
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem 1.75rem 1.75rem;
+  border-radius: 16px;
+  background: var(--ink);
+  color: #fff;
+}
+
+.proxima-arcos {
+  position: absolute;
+  right: -3.5rem;
+  top: -2.5rem;
+  width: 15rem;
+  height: 15rem;
+  fill: none;
+  stroke: rgb(255 255 255 / 0.09);
+  stroke-width: 6.2;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.proxima h2 {
+  position: relative;
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--sage);
+}
+
+.proxima-hora {
+  position: relative;
+  margin: 0;
+  font-family: var(--letra-titulos);
+  font-size: 3.4rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.proxima-dia {
+  margin-right: 0.6rem;
+  font-size: 1.4rem;
+  color: var(--sage);
+}
+
+.proxima-nome {
+  position: relative;
+  margin: 0.6rem 0 0.15rem;
+  font-family: var(--letra-titulos);
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+
+.proxima-quando {
+  margin: 0;
+  color: #c9dbd5;
+}
+
+.proxima-briefing {
+  margin: 1.25rem 0 1.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.08);
+  color: #e4efeb;
+  max-width: 60ch;
+}
+
+.proxima-briefing p {
+  margin: 0;
+}
+
+.proxima-briefing-estado {
+  font-weight: 700;
+  color: #fff;
+}
+
+.proxima-resumo {
+  margin-top: 0.35rem !important;
+}
+
+.proxima-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+a.botao.botao-claro {
+  background: #fff;
+  color: var(--ink);
+}
+
+a.botao.botao-contorno {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgb(255 255 255 / 0.45);
+}
+
+.proxima .botao:focus-visible {
+  outline-color: var(--sage);
+}
+
+.proxima-vazia .proxima-nome {
+  font-size: 1.15rem;
+  margin-bottom: 1.25rem;
+}
+
+.dia,
+.confirmar {
+  padding: 1.25rem 1.25rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.dia h2,
+.confirmar h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.dia-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dia-consulta {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.5rem;
+  border-radius: 8px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.dia-consulta:hover {
+  background: var(--paper);
+}
+
+.dia-consulta:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 0;
+}
+
+.dia-hora {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.dia-nome {
+  font-weight: 700;
+}
+
+.dia-passada .dia-hora,
+.dia-passada .dia-nome {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.dia-agora {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--teal);
+}
+
+.dia-agora::after {
+  content: '';
+  flex: 1;
+  border-top: 2px solid var(--teal);
+}
+
+.confirmar {
+  grid-column: 1 / -1;
+}
+
+.confirmar .hint {
+  margin-top: 0;
+}
+
+.confirmar-lista {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.confirmar-lista a {
+  color: var(--ink);
+}
+
+/* Página inicial sem sessão */
+.boas-vindas {
+  max-width: 34rem;
+  margin: 3rem auto;
+}
+
+.boas-vindas h1 {
+  margin-top: 1rem;
+  font-size: 2.4rem;
+}
+
+/* Telemóvel (passo 10): menu em baixo, painéis em ecrã inteiro e agenda com deslocação lateral */
+@media (max-width: 720px) {
+  .topbar {
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .topbar .logo-word {
+    font-size: 1.2rem;
+  }
+
+  .topbar-right {
+    gap: 0.6rem;
+  }
+
+  .env-badge {
+    display: none;
+  }
+
+  .nav-principal {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 25;
+    display: grid !important;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 0.25rem;
+    padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom));
+    background: #fff;
+    border-top: 1px solid var(--border);
+  }
+
+  .nav-principal a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0.4rem;
+    border-radius: 10px;
+  }
+
+  .content {
+    padding: 1.25rem 1rem 6rem;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+  }
+
+  .hoje-grelha {
+    grid-template-columns: 1fr;
+  }
+
+  .hoje-atalhos {
+    width: 100%;
+  }
+
+  .hoje-atalhos .botao {
+    flex: 1;
+  }
+
+  .proxima {
+    padding: 1.25rem 1.25rem 1.4rem;
+  }
+
+  .proxima-hora {
+    font-size: 2.8rem;
+  }
+
+  .dia-consulta {
+    grid-template-columns: max-content 1fr;
+    gap: 0.25rem 0.9rem;
+  }
+
+  .dia-consulta .etiqueta {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .boas-vindas {
+    margin: 1.5rem auto;
+  }
+
+  .boas-vindas h1 {
+    font-size: 1.9rem;
+  }
+
+  .agenda-corpo {
+    overflow-x: auto;
+  }
+
+  .agenda {
+    min-width: 44rem;
+    overflow: clip;
+  }
+
+  .agenda-horas {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+    border-right: 1px solid var(--border);
+  }
+
+  .rotulo-longo {
+    display: none;
+  }
+
+  .agenda-navegacao button {
+    min-width: 2.75rem;
+  }
+
+  .painel {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    width: auto;
+    border-radius: 0;
+    border: 0;
+    overflow-y: auto;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+
+  .linha-campos {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .linha-campos > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .tabela {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .sino-painel {
+    position: fixed;
+    top: 3.5rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+  }
+
+  button,
+  a.botao {
+    min-height: 2.75rem;
+  }
+
+  .botao-mini {
+    min-height: 2.25rem;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* evita o zoom automático do iPhone ao tocar num campo */
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
 }
