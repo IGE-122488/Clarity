@@ -106,6 +106,13 @@ export function Agenda() {
       .catch((e) => setErro(e.message))
   }, [session, segunda, recarregar])
 
+  // O sino passou consultas a "realizada" ou o psicólogo confirmou-as: volta a carregar a semana.
+  useEffect(() => {
+    const aoMudar = () => setRecarregar((n) => n + 1)
+    window.addEventListener(CONSULTAS_ALTERADAS, aoMudar)
+    return () => window.removeEventListener(CONSULTAS_ALTERADAS, aoMudar)
+  }, [])
+
   useEffect(() => {
     if (!session) return
     // Inclui os arquivados só para mostrar o nome em consultas antigas.
@@ -131,8 +138,7 @@ export function Agenda() {
 
   function guardado() {
     setPainel(null)
-    setRecarregar((n) => n + 1)
-    avisar(CONSULTAS_ALTERADAS) // o sino atualiza-se logo
+    avisar(CONSULTAS_ALTERADAS) // a agenda (ver acima) e o sino voltam a carregar
   }
 
   return (
@@ -216,7 +222,7 @@ export function Agenda() {
                     <button
                       key={c.id}
                       type="button"
-                      className={`agenda-consulta estado-${c.estado}`}
+                      className={`agenda-consulta estado-${c.estado}${c.estado_automatico ? ' por-confirmar' : ''}`}
                       style={{
                         ...posicao(c),
                         left: `calc(${(coluna / colunas) * 100}% + 2px)`,
@@ -228,6 +234,7 @@ export function Agenda() {
                       <span>
                         {formatarHora(new Date(c.inicio))}–{formatarHora(new Date(c.fim))}
                         {c.estado !== 'agendada' && ` · ${c.estado}`}
+                        {c.estado_automatico && ' (por confirmar)'}
                       </span>
                     </button>
                   ),

@@ -792,3 +792,50 @@ textarea:focus-visible {
 .botao-perigo:disabled {
   opacity: 0.45;
 }
+
+/* Passo 9: arquivado, consultas por confirmar */
+.etiqueta-arquivado {
+  margin-left: 0.6rem;
+  vertical-align: middle;
+  font-size: 0.8rem;
+  background: #ece9e1;
+  color: #5b5546;
+}
+
+.agenda-consulta.por-confirmar {
+  border-style: dashed;
+}
+
+.aviso-confirmar {
+  display: block;
+  margin-top: 0.35rem;
+  font-weight: 400;
+}
+
+.sino-confirmar-linha {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.35rem 0;
+}
+
+.sino-confirmar-linha + .sino-confirmar-linha {
+  border-top: 1px solid var(--border);
+}
+
+.sino-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.botao-mini {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+.botao-mini.secundario {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--border);
+}

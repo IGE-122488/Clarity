@@ -3,12 +3,18 @@
 Como nos pacientes, quem garante que cada psicólogo só vê as suas consultas é o Supabase (RLS).
 Uma consulta de outro psicólogo responde 404, como se não existisse.
 
+Estado automático (passo 9): quando uma consulta "agendada" já terminou, a app chama
+`POST /api/consultas/concluir-passadas`, que a passa a "realizada" com `estado_automatico: true`. O
+sino pede ao psicólogo que confirme (PATCH com estado "realizada") ou a mude para "faltou" ou
+"cancelada". Qualquer PATCH que envie o estado conta como confirmação e põe `estado_automatico`
+a false.
+
 Sobreposição de horários: por omissão, marcar ou remarcar para um horário já ocupado responde 409
 com a lista das consultas em conflito. A app mostra o aviso e, se o psicólogo confirmar, repete o
 pedido com `ignorar_sobreposicao: true`.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from uuid import UUID
 
@@ -90,6 +96,12 @@ async def marcar(
     return await db.criar_consulta(client, settings, token, novo)
 
 
+@router.post("/concluir-passadas", response_model=list[ConsultaAgenda])
+async def concluir_passadas(settings: SettingsDep, client: ClientDep, token: Token) -> list[dict]:
+    """Passa a "realizada" as consultas "agendada" que já terminaram, para o psicólogo confirmar."""
+    return await db.concluir_consultas_passadas(client, settings, token, datetime.now(UTC))
+
+
 @router.get("/{consulta_id}", response_model=Consulta)
 async def obter(consulta_id: UUID, settings: SettingsDep, client: ClientDep, token: Token) -> dict:
     consulta = await db.obter_consulta(client, settings, token, consulta_id)
@@ -122,6 +134,9 @@ async def alterar(
         except ValueError as exc:
             raise _erro(422, str(exc)) from exc
         alteracoes.update(inicio=db.iso_utc(inicio), fim=db.iso_utc(fim))
+
+    if "estado" in alteracoes:
+        alteracoes["estado_automatico"] = False  # o psicólogo confirmou ou mudou o estado
 
     muda_horario = "inicio" in alteracoes or "fim" in alteracoes
     volta_a_ficar_ativa = atual["estado"] == "cancelada" and estado != "cancelada"

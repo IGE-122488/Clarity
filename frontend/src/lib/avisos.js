@@ -39,15 +39,19 @@ export function calcularAvisos(consultas, agora) {
 
   const passadas = porInicio.filter((c) => c.estado === 'agendada' && new Date(c.fim).getTime() <= t)
 
+  // Passaram sozinhas a "realizada" no fim da hora (passo 9): o psicólogo confirma ou corrige.
+  const porConfirmar = porInicio.filter((c) => c.estado === 'realizada' && c.estado_automatico)
+
   // Cada aviso tem uma chave: o sino conta como "novos" os que ainda não foram vistos.
   const chaves = [
     ...proximas.map((c) => `proxima:${c.id}`),
     ...(amanha.length > 0 ? [`amanha:${paraInputData(inicioDeAmanha)}:${amanha.length}`] : []),
     // Só volta a contar como novo quando mais uma consulta passa a estar por atualizar.
     ...(passadas.length > 0 ? [`passadas:${passadas[passadas.length - 1].id}`] : []),
+    ...(porConfirmar.length > 0 ? [`confirmar:${porConfirmar[porConfirmar.length - 1].id}`] : []),
   ]
 
-  return { proximas, amanha, passadas, chaves, inicioDeAmanha }
+  return { proximas, amanha, passadas, porConfirmar, chaves, inicioDeAmanha }
 }
 
 export function minutosAte(inicio, agora) {

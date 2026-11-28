@@ -5,7 +5,8 @@ import { CONSULTAS_ALTERADAS, avisar } from '../lib/eventos'
 import { descarregar, exportacaoEmTexto, mesmoNome, nomeDoFicheiro } from '../lib/exportacao'
 
 // Passo 7 (RGPD): exportar todos os dados do paciente e apagá-lo definitivamente.
-export function DadosDoPaciente({ paciente, numConsultas }) {
+// Passo 9: arquivar/reativar ao lado de apagar (onAlterado recebe o paciente atualizado).
+export function DadosDoPaciente({ paciente, numConsultas, onAlterado }) {
   const navigate = useNavigate()
   const [aExportar, setAExportar] = useState(null) // null | 'json' | 'txt'
   const [erroExportar, setErroExportar] = useState(null)
@@ -13,6 +14,24 @@ export function DadosDoPaciente({ paciente, numConsultas }) {
   const [nomeEscrito, setNomeEscrito] = useState('')
   const [aApagar, setAApagar] = useState(false)
   const [erroApagar, setErroApagar] = useState(null)
+  const [aArquivar, setAArquivar] = useState(false)
+  const [erroArquivar, setErroArquivar] = useState(null)
+
+  async function arquivarOuReativar() {
+    setAArquivar(true)
+    setErroArquivar(null)
+    try {
+      const atualizado = await api(`/api/pacientes/${paciente.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ativo: !paciente.ativo }),
+      })
+      onAlterado?.(atualizado)
+    } catch (e) {
+      setErroArquivar(e.message)
+    } finally {
+      setAArquivar(false)
+    }
+  }
 
   async function exportar(formato) {
     setAExportar(formato)
@@ -57,11 +76,14 @@ export function DadosDoPaciente({ paciente, numConsultas }) {
     setErroApagar(null)
   }
 
-  const consultasTexto = numConsultas === 1 ? 'a consulta' : `as ${numConsultas} consultas`
+  const oQueApaga =
+    numConsultas === 0
+      ? 'a ficha deste paciente (ainda não tem consultas)'
+      : `a ficha, ${numConsultas === 1 ? 'a consulta' : `as ${numConsultas} consultas`}, todas as notas e os briefings deste paciente`
 
   return (
     <section className="dados-paciente" aria-labelledby="titulo-dados-paciente">
-      <h2 id="titulo-dados-paciente">Dados do paciente (RGPD)</h2>
+      <h2 id="titulo-dados-paciente">Dados do paciente</h2>
 
       <div className="dados-bloco">
         <h3>Exportar</h3>
@@ -85,22 +107,42 @@ export function DadosDoPaciente({ paciente, numConsultas }) {
       </div>
 
       <div className="dados-bloco dados-perigo">
-        <h3>Apagar definitivamente</h3>
+        <h3>Arquivar ou apagar</h3>
         {!confirmar ? (
           <>
             <p className="hint">
-              Apaga a ficha, {consultasTexto}, todas as notas e os briefings deste paciente. Não é possível
-              desfazer. Para deixar de o ver na lista sem apagar nada, arquive-o.
+              {paciente.ativo ? (
+                <>
+                  <strong>Arquivar</strong> esconde o paciente da lista e impede marcar consultas novas, sem apagar
+                  nada. Pode reativá-lo quando quiser.
+                </>
+              ) : (
+                <>
+                  Este paciente está <strong>arquivado</strong>: não aparece na lista e não se podem marcar consultas
+                  novas. Reative-o para voltar a marcar.
+                </>
+              )}{' '}
+              <strong>Apagar definitivamente</strong> apaga {oQueApaga}, e não se pode desfazer.
             </p>
-            <button type="button" className="botao-perigo" onClick={() => setConfirmar(true)}>
-              Apagar paciente…
-            </button>
+            <div className="dados-acoes">
+              <button type="button" className="botao-secundario" disabled={aArquivar} onClick={arquivarOuReativar}>
+                {aArquivar ? 'A guardar…' : paciente.ativo ? 'Arquivar paciente' : 'Reativar paciente'}
+              </button>
+              <button type="button" className="botao-perigo" disabled={aArquivar} onClick={() => setConfirmar(true)}>
+                Apagar paciente…
+              </button>
+            </div>
+            {erroArquivar && (
+              <p className="error" role="alert">
+                {erroArquivar}
+              </p>
+            )}
           </>
         ) : (
           <form onSubmit={apagar}>
             <p>
-              <strong>Isto não se pode desfazer.</strong> Vão ser apagados a ficha, {consultasTexto}, todas as
-              notas e os briefings de <strong>{paciente.nome}</strong>. Se precisar de uma cópia, exporte primeiro.
+              <strong>Isto não se pode desfazer.</strong> Vai ser apagada {oQueApaga} (
+              <strong>{paciente.nome}</strong>). Se precisar de uma cópia, exporte primeiro.
             </p>
             <label htmlFor="confirmar-nome">
               Para confirmar, escreva o nome do paciente: <strong>{paciente.nome}</strong>
